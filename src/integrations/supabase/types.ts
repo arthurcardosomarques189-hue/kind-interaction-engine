@@ -14,16 +14,248 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      credit_ledger: {
+        Row: {
+          actor_id: string | null
+          amount: number
+          created_at: string
+          id: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          credits: number
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          credits?: number
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credits?: number
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          credit_balance: number | null
+          display_name: string
+          email: string
+          id: string
+          plan: string
+          suspended: boolean
+          unlimited_credits: boolean
+        }
+        Insert: {
+          created_at?: string
+          credit_balance?: number | null
+          display_name?: string
+          email?: string
+          id: string
+          plan?: string
+          suspended?: boolean
+          unlimited_credits?: boolean
+        }
+        Update: {
+          created_at?: string
+          credit_balance?: number | null
+          display_name?: string
+          email?: string
+          id?: string
+          plan?: string
+          suspended?: boolean
+          unlimited_credits?: boolean
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          cuts: number
+          id: string
+          minutes: number
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cuts?: number
+          id?: string
+          minutes?: number
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cuts?: number
+          id?: string
+          minutes?: number
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usage_events: {
+        Row: {
+          api_calls: number
+          created_at: string
+          credits_used: number
+          cuts: number
+          error: string | null
+          estimated_cost: number
+          id: string
+          minutes: number
+          processing_seconds: number
+          project_id: string | null
+          user_id: string
+          videos: number
+        }
+        Insert: {
+          api_calls?: number
+          created_at?: string
+          credits_used?: number
+          cuts?: number
+          error?: string | null
+          estimated_cost?: number
+          id?: string
+          minutes?: number
+          processing_seconds?: number
+          project_id?: string | null
+          user_id: string
+          videos?: number
+        }
+        Update: {
+          api_calls?: number
+          created_at?: string
+          credits_used?: number
+          cuts?: number
+          error?: string | null
+          estimated_cost?: number
+          id?: string
+          minutes?: number
+          processing_seconds?: number
+          project_id?: string | null
+          user_id?: string
+          videos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usage_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_update_user: {
+        Args: {
+          credit_delta?: number
+          new_plan?: string
+          new_suspended?: boolean
+          target: string
+        }
+        Returns: undefined
+      }
+      assign_initial_owner: { Args: { target: string }; Returns: undefined }
+      is_owner: { Args: never; Returns: boolean }
+      reserve_processing_credits: {
+        Args: { amount: number; target: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner_admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +382,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner_admin", "user"],
+    },
   },
 } as const
