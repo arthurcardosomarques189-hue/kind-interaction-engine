@@ -3,6 +3,7 @@ import { Upload, FileVideo, X, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createCortesProject } from '@/lib/cortes-project.functions';
+import { supabase } from '@/integrations/supabase/client';
 import type { CortesProject } from '@/lib/cortes-project';
 
 export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject) => void }) {
@@ -26,22 +27,49 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
     if (!file) return;
     setBusy(true);
     setError(null);
+
     try {
       const project = await createCortesProject({
         data: { title: file.name.replace(/\.[^/.]+$/, '') },
       });
+
+      const path = `${project.user_id}/${project.id}/original-${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const { error: uploadError } = await supabase.storage
+        .from('cortes-videos')
+        .upload(path, file, { contentType: file.type, upsert: false });
+
+      if (uploadError) {
+        throw new Error('Não foi possível enviar o vídeo para o armazenamento.');
+      }
+
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({
+          video_path: path,
+          video_name: file.name,
+          video_size: file.size,
+          status: 'queued',
+          progress: 10,
+        })
+        .eq('id', project.id);
+
+      if (updateError) {
+        await supabase.storage.from('cortes-videos').remove([path]);
+        throw new Error('O vídeo foi enviado, mas não foi possível finalizar o projeto.');
+      }
+
       onCreated({
         id: project.id,
         title: project.title,
         fileName: file.name,
         fileSize: file.size,
-        status: project.status as CortesProject['status'],
-        progress: 0,
+        status: 'queued',
+        progress: 10,
         createdAt: project.created_at,
       });
       setFile(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível criar o projeto.');
+      setError(cause instanceof Error ? cause.message : 'Não foi possível enviar o vídeo.');
     } finally {
       setBusy(false);
     }
@@ -84,7 +112,7 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
         <Button className="mt-4 w-full" disabled={!file || busy} onClick={createProject}>
-          {busy ? <><Loader2 className="animate-spin" /> Criando projeto...</> : <><Sparkles /> Criar projeto</>}
+          {busy ? <><Loader2 className="animate-spin" /> Enviando vídeo...</> : <><Sparkles /> Enviar e criar projeto</>}
         </Button>
       </CardContent>
     </Card>
