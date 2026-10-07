@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { CortesUpload } from '@/components/cortes-upload';
+import type { CortesProject } from '@/lib/cortes-project';
 import { Link } from '@tanstack/react-router';
 import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +14,7 @@ const features = [
 
 export function CortesDashboard() {
   const [showInfo, setShowInfo] = useState(false);
+  const [project, setProject] = useState<CortesProject | null>(null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,6 +73,8 @@ export function CortesDashboard() {
           <Card><CardHeader><CardDescription>Cortes gerados</CardDescription><CardTitle className="text-3xl">0</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Ainda não há cortes processados.</p></CardContent></Card>
           <Card><CardHeader><CardDescription>Tempo economizado</CardDescription><CardTitle className="flex items-center gap-2 text-3xl">0 <Clock3 size={22} /></CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Calcularemos após os primeiros processamentos.</p></CardContent></Card>
         </section>
+
+        <section className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_.9fr]"><CortesUpload onCreated={setProject} />{project ? <Card><CardHeader><CardTitle>Projeto criado</CardTitle><CardDescription>O arquivo foi preparado para entrar no pipeline de IA.</CardDescription></CardHeader><CardContent><div className="rounded-xl border p-4"><strong className="block truncate">{project.title}</strong><span className="text-sm text-muted-foreground">Status: {project.status} · {project.fileName}</span></div><div className="mt-4 rounded-xl bg-muted/40 p-4 text-sm"><strong>Próxima etapa</strong><p className="mt-1 text-muted-foreground">Conectar armazenamento, transcrição e análise de melhores momentos no backend.</p></div></CardContent></Card> : <div className="rounded-2xl border border-dashed p-8 text-center"><FolderOpen className="mx-auto text-muted-foreground" size={28} /><h2 className="mt-3 text-xl font-semibold">Comece seu primeiro projeto</h2><p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">Escolha um vídeo ao lado para preparar o processamento.</p></div>}</section>
 
         <section className="mt-8 rounded-2xl border border-dashed p-8 text-center">
           <FolderOpen className="mx-auto text-muted-foreground" size={28} />
