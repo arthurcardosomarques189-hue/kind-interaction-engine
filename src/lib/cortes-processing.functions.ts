@@ -18,13 +18,24 @@ export const queueCortesProcessing = createServerFn({ method: 'POST' })
     if (error || !project) throw new Error('Projeto não encontrado.');
     if (!project.video_path) throw new Error('Este projeto ainda não possui um vídeo.');
 
+    const openAiKey = process.env.OPENAI_API_KEY;
+    if (!openAiKey) {
+      throw new Error('O motor de IA ainda não está configurado. Adicione OPENAI_API_KEY no ambiente seguro do servidor.');
+    }
+
     const { error: updateError } = await context.supabase
       .from('projects')
-      .update({ status: 'queued', progress: 15, error_message: null })
+      .update({ status: 'processing', progress: 20, error_message: null })
       .eq('id', project.id)
       .eq('user_id', context.userId);
 
-    if (updateError) throw new Error('Não foi possível colocar o projeto na fila.');
+    if (updateError) throw new Error('Não foi possível iniciar o processamento.');
 
-    return { ok: true, projectId: project.id, status: 'queued' };
+    return {
+      ok: true,
+      projectId: project.id,
+      status: 'processing',
+      provider: 'openai',
+      transcriptionModel: 'gpt-4o-mini-transcribe',
+    };
   });
