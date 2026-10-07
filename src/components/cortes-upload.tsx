@@ -2,27 +2,49 @@ import { useRef, useState } from 'react';
 import { Upload, FileVideo, X, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { createLocalProject, type CortesProject } from '@/lib/cortes-project';
+import { createCortesProject } from '@/lib/cortes-project.functions';
+import type { CortesProject } from '@/lib/cortes-project';
 
 export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function selectFile(next: File | undefined) {
     if (!next) return;
-    if (!next.type.startsWith('video/')) return;
+    setError(null);
+    if (!next.type.startsWith('video/')) {
+      setError('Escolha um arquivo de vídeo.');
+      return;
+    }
     setFile(next);
   }
 
   async function createProject() {
     if (!file) return;
     setBusy(true);
-    await new Promise(resolve => setTimeout(resolve, 450));
-    onCreated(createLocalProject(file));
-    setBusy(false);
-    setFile(null);
+    setError(null);
+    try {
+      const project = await createCortesProject({
+        data: { title: file.name.replace(/\.[^/.]+$/, '') },
+      });
+      onCreated({
+        id: project.id,
+        title: project.title,
+        fileName: file.name,
+        fileSize: file.size,
+        status: project.status as CortesProject['status'],
+        progress: 0,
+        createdAt: project.created_at,
+      });
+      setFile(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Não foi possível criar o projeto.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -50,14 +72,19 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
           <div className="mt-4 flex items-center justify-between rounded-xl border p-4">
             <div className="flex min-w-0 items-center gap-3">
               <FileVideo className="shrink-0 text-primary" size={22} />
-              <div className="min-w-0"><strong className="block truncate">{file.name}</strong><span className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)} MB</span></div>
+              <div className="min-w-0">
+                <strong className="block truncate">{file.name}</strong>
+                <span className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
+              </div>
             </div>
             <Button variant="ghost" size="icon" onClick={() => setFile(null)} aria-label="Remover vídeo"><X /></Button>
           </div>
         )}
 
+        {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+
         <Button className="mt-4 w-full" disabled={!file || busy} onClick={createProject}>
-          {busy ? <><Loader2 className="animate-spin" /> Preparando projeto...</> : <><Sparkles /> Criar projeto</>}
+          {busy ? <><Loader2 className="animate-spin" /> Criando projeto...</> : <><Sparkles /> Criar projeto</>}
         </Button>
       </CardContent>
     </Card>
