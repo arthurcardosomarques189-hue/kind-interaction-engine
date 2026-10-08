@@ -286,13 +286,6 @@ export function CortesDashboard() {
               <CardContent className="space-y-3">
                 {clips.map((clip, index) => (
                   <div key={clip.id} className="rounded-xl border p-4 transition hover:bg-muted/40">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <span className="text-xs font-semibold text-muted-foreground">CORTE {index + 1}</span>
-                        <strong className="mt-1 block">{clip.title}</strong>
-                      </div>
-                      <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{clip.score}/100</span>
-                    </div>
                     <button
                       type="button"
                       onClick={() => startClip(clip)}
