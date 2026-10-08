@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { getAccount } from '@/lib/admin.functions';
+import { checkCortesMedia, generateCortesMedia } from '@/lib/cortes-suite.functions';
 
 const features = [
   { icon: Sparkles, title: 'Encontre os melhores momentos', description: 'A IA transcreve o vídeo e identifica trechos com maior potencial.' },
@@ -68,6 +69,9 @@ export function CortesDashboard() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const account = useQuery({ queryKey: ['cortes-account'], queryFn: () => getAccount(), staleTime: 30_000 });
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [aiVideoPrompt, setAiVideoPrompt] = useState('');
+  const [aiVideoJob, setAiVideoJob] = useState<{ id: string; status: string; outputUrl?: string | null; error?: string | null } | null>(null);
+  const [generatingAiVideo, setGeneratingAiVideo] = useState(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem('cortes-ai-theme');
@@ -148,6 +152,67 @@ export function CortesDashboard() {
     videoRef.current.currentTime = selectedClip.startSeconds;
     void videoRef.current.play();
   }, [selectedClip]);
+
+  useEffect(() => {
+    if (!aiVideoJob || !['processing', 'queued', 'pending'].includes(aiVideoJob.status)) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const latest = await checkCortesMedia({ data: { mediaJobId: aiVideoJob.id } });
+        if (!cancelled) {
+          let outputUrl: string | null = null;
+          if (latest?.status === 'completed' && latest?.output_path) {
+            const { data } = await supabase.storage.from('cortes-videos').createSignedUrl(latest.output_path, 60 * 60);
+            outputUrl = data?.signedUrl ?? null;
+          }
+          setAiVideoJob((current) => current ? {
+            ...current,
+            status: latest?.status ?? current.status,
+            outputUrl,
+            error: latest?.error_message ?? latest?.error ?? null,
+          } : current);
+        }
+      } catch (error) {
+        if (!cancelled) setAiVideoJob((current) => current ? {
+          ...current,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Não foi possível consultar o vídeo.',
+        } : current);
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => void poll(), 6000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [aiVideoJob?.id, aiVideoJob?.status]);
+
+  const generateAiVideo = async () => {
+    const prompt = aiVideoPrompt.trim();
+    if (!prompt || generatingAiVideo) return;
+    setGeneratingAiVideo(true);
+    setAiVideoJob(null);
+    try {
+      const result = await generateCortesMedia({
+        data: {
+          kind: 'video',
+          prompt,
+          projectId: project?.id,
+        },
+      });
+      setAiVideoJob({ id: result.id, status: result.status ?? 'processing' });
+      setAiVideoPrompt('');
+    } catch (error) {
+      setAiVideoJob({
+        id: '',
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Não foi possível iniciar a geração.',
+      });
+    } finally {
+      setGeneratingAiVideo(false);
+    }
+  };
 
   const exportClip = async (clip: CortesClip) => {
     if (!project || exportingClipId) return;
@@ -246,6 +311,49 @@ export function CortesDashboard() {
         </section>
 
         <CreativeSuite />
+
+        <section id="video-ia" className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Gerar vídeo com IA</CardTitle>
+              <CardDescription>Crie um vídeo curto com Runway Gen-4.5 a partir de uma descrição. O processamento acontece em segundo plano.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  value={aiVideoPrompt}
+                  onChange={(event) => setAiVideoPrompt(event.target.value)}
+                  onKeyDown={(event) => { if (event.key === 'Enter') void generateAiVideo(); }}
+                  placeholder="Ex.: cidade futurista à noite, câmera cinematográfica, chuva..."
+                  className="min-h-11 flex-1 rounded-xl border bg-background px-4 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-primary"
+                  disabled={generatingAiVideo}
+                />
+                <Button type="button" onClick={() => void generateAiVideo()} disabled={generatingAiVideo || aiVideoPrompt.trim().length < 3}>
+                  {generatingAiVideo ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                  {generatingAiVideo ? 'Enviando…' : 'Gerar vídeo'}
+                </Button>
+              </div>
+              {aiVideoJob?.status === 'processing' && (
+                <div className="mt-4 rounded-xl bg-muted/50 p-4 text-sm">
+                  <div className="flex items-center gap-2 font-medium"><Loader2 size={16} className="animate-spin text-primary" /> Gerando seu vídeo…</div>
+                  <p className="mt-1 text-xs text-muted-foreground">O status é atualizado automaticamente.</p>
+                </div>
+              )}
+              {aiVideoJob?.status === 'failed' && (
+                <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{aiVideoJob.error ?? 'Não foi possível gerar o vídeo.'}</div>
+              )}
+              {aiVideoJob?.status === 'completed' && aiVideoJob.outputUrl && (
+                <div className="mt-5 overflow-hidden rounded-2xl border bg-black">
+                  <video src={aiVideoJob.outputUrl} controls className="mx-auto max-h-[70vh] w-full max-w-2xl" />
+                  <div className="flex items-center justify-between gap-3 bg-card p-3">
+                    <span className="text-sm font-semibold">Vídeo pronto</span>
+                    <Button asChild size="sm" variant="outline"><a href={aiVideoJob.outputUrl} target="_blank" rel="noreferrer">Abrir vídeo</a></Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
 
         <section id="novo-projeto" className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
           <CortesUpload onCreated={(created) => { setProject(created); setClips([]); setVideoUrl(null); setSelectedClip(null); }} />
