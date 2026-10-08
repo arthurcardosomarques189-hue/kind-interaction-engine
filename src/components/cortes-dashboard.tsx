@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { CortesUpload } from '@/components/cortes-upload';
+import { getCortesExportStatus, renderCortesClip } from '@/lib/cortes-export.functions';
 import type { CortesClip, CortesProject } from '@/lib/cortes-project';
 import { Link } from '@tanstack/react-router';
 import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle } from 'lucide-react';
@@ -26,6 +27,8 @@ export function CortesDashboard() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loadingResults, setLoadingResults] = useState(false);
   const [selectedClip, setSelectedClip] = useState<CortesClip | null>(null);
+  const [exportingClipId, setExportingClipId] = useState<string | null>(null);
+  const [exportResults, setExportResults] = useState<Record<string, { status: string; outputUrl?: string | null; error?: string | null }>>({});
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -91,6 +94,35 @@ export function CortesDashboard() {
     videoRef.current.currentTime = selectedClip.startSeconds;
     void videoRef.current.play();
   }, [selectedClip]);
+
+  const exportClip = async (clip: CortesClip) => {
+    if (!project || exportingClipId) return;
+    setExportingClipId(clip.id);
+    try {
+      const created = await renderCortesClip({ data: { projectId: project.id, clipId: clip.id } });
+      let latest = await getCortesExportStatus({ data: { exportId: created.exportId } });
+      for (let attempt = 0; attempt < 45 && latest.status !== 'completed' && latest.status !== 'failed'; attempt++) {
+        setExportResults((current) => ({ ...current, [clip.id]: { status: latest.status } }));
+        await new Promise((resolve) => window.setTimeout(resolve, 4000));
+        latest = await getCortesExportStatus({ data: { exportId: created.exportId } });
+      }
+      setExportResults((current) => ({
+        ...current,
+        [clip.id]: {
+          status: latest.status,
+          outputUrl: latest.output_url,
+          error: latest.error_message,
+        },
+      }));
+    } catch (error) {
+      setExportResults((current) => ({
+        ...current,
+        [clip.id]: { status: 'failed', error: error instanceof Error ? error.message : 'Erro ao exportar.' },
+      }));
+    } finally {
+      setExportingClipId(null);
+    }
+  };
 
   const startClip = (clip: CortesClip) => {
     setSelectedClip(clip);
@@ -199,7 +231,7 @@ export function CortesDashboard() {
                   <div className="flex aspect-video items-center justify-center rounded-xl bg-muted"><Loader2 className="animate-spin" /></div>
                 )}
                 <p className="mt-3 text-xs text-muted-foreground">
-                  O MVP atual gera e organiza os melhores momentos; a exportação MP4 com cortes e legendas será conectada ao editor na próxima etapa.
+                  Agora cada corte pode ser renderizado em MP4 9:16. Legendas automáticas e editor visual entram na próxima etapa.
                 </p>
               </CardContent>
             </Card>
@@ -211,12 +243,7 @@ export function CortesDashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {clips.map((clip, index) => (
-                  <button
-                    key={clip.id}
-                    type="button"
-                    onClick={() => startClip(clip)}
-                    className="w-full rounded-xl border p-4 text-left transition hover:bg-muted/40"
-                  >
+                  <div key={clip.id} className="rounded-xl border p-4 transition hover:bg-muted/40">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <span className="text-xs font-semibold text-muted-foreground">CORTE {index + 1}</span>
@@ -227,7 +254,40 @@ export function CortesDashboard() {
                     <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                       <Clock3 size={14} /> {formatTime(clip.startSeconds)} – {formatTime(clip.endSeconds)}
                     </div>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => startClip(clip)}
+                      className="w-full text-left"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <span className="text-xs font-semibold text-muted-foreground">CORTE {index + 1}</span>
+                          <strong className="mt-1 block">{clip.title}</strong>
+                        </div>
+                        <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{clip.score}/100</span>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock3 size={14} /> {formatTime(clip.startSeconds)} – {formatTime(clip.endSeconds)}
+                      </div>
+                    </button>
+                    <div className="mt-3 flex items-center gap-2">
+                      <Button type="button" size="sm" onClick={() => void exportClip(clip)} disabled={exportingClipId !== null}>
+                        {exportingClipId === clip.id ? <Loader2 className="animate-spin" /> : <Play />}
+                        {exportingClipId === clip.id ? 'Renderizando…' : 'Gerar vídeo 9:16'}
+                      </Button>
+                      {exportResults[clip.id]?.status === 'completed' && exportResults[clip.id]?.outputUrl && (
+                        <Button asChild size="sm" variant="outline">
+                          <a href={exportResults[clip.id].outputUrl!} target="_blank" rel="noreferrer">Abrir MP4</a>
+                        </Button>
+                      )}
+                    </div>
+                    {exportResults[clip.id]?.status === 'rendering' && (
+                      <p className="mt-2 text-xs text-muted-foreground">O vídeo está sendo renderizado. Aguarde.</p>
+                    )}
+                    {exportResults[clip.id]?.status === 'failed' && (
+                      <p className="mt-2 text-xs text-destructive">{exportResults[clip.id].error ?? 'Não foi possível gerar o vídeo.'}</p>
+                    )}
+                  </div>
                 ))}
               </CardContent>
             </Card>
