@@ -326,12 +326,12 @@ export function CortesDashboard() {
                           <strong className="mt-1 block">{clip.title}</strong>
                         </div>
                         <div className="text-right">
-                          <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{clip.score}/100</span>
+                          <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{Math.max(0, Math.min(10, Math.round(clip.score / 10)))} / 10</span>
                           <span className="mt-1 block text-[10px] font-medium text-muted-foreground">Nota do corte</span>
                         </div>
                       </div>
                       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.max(0, Math.min(100, clip.score))}%` }} />
+                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.max(0, Math.min(10, Math.round(clip.score / 10))) * 10}%` }} />
                       </div>
                       <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                         <Clock3 size={14} /> {formatTime(clip.startSeconds)} – {formatTime(clip.endSeconds)}
