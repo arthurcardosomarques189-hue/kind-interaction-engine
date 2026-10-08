@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { CortesUpload } from '@/components/cortes-upload';
 import { getCortesExportStatus, renderCortesClip } from '@/lib/cortes-export.functions';
 import type { CortesClip, CortesProject } from '@/lib/cortes-project';
@@ -7,6 +8,7 @@ import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { getAccount } from '@/lib/admin.functions';
 
 const features = [
   { icon: Sparkles, title: 'Encontre os melhores momentos', description: 'A IA transcreve o vídeo e identifica trechos com maior potencial.' },
@@ -31,6 +33,7 @@ export function CortesDashboard() {
   const [exportResults, setExportResults] = useState<Record<string, { status: string; outputUrl?: string | null; error?: string | null }>>({});
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const [captionStyle, setCaptionStyle] = useState<'highlight' | 'karaoke' | 'pop' | 'fade' | 'slide' | 'bounce' | 'typewriter'>('highlight');
+  const account = useQuery({ queryKey: ['cortes-account'], queryFn: () => getAccount(), staleTime: 30_000 });
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -141,16 +144,23 @@ export function CortesDashboard() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Scissors size={19} /></span>
             <span>CORTES<span className="text-primary"> AI</span></span>
           </Link>
-          <div className="flex items-center gap-3">
-            <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground">Admin</Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/projects" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Projetos</Link>
+            {account.data?.profile && (
+              <span className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold">
+                {account.data.profile.unlimited_credits ? '∞ créditos' : `${account.data.profile.credit_balance ?? 0} créditos`}
+              </span>
+            )}
+            {account.data?.owner && <Link to="/admin" className="text-sm font-medium text-primary hover:underline">Admin</Link>}
             <Button asChild variant="outline" size="sm"><Link to="/auth">Entrar</Link></Button>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
-        <section className="grid gap-8 overflow-hidden rounded-3xl border bg-card p-6 shadow-sm md:grid-cols-[1.35fr_.65fr] md:p-10">
-          <div className="flex flex-col justify-center">
+        <section className="relative grid gap-8 overflow-hidden rounded-3xl border bg-card p-6 shadow-sm md:grid-cols-[1.35fr_.65fr] md:p-10">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
+          <div className="relative flex flex-col justify-center">
             <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <Zap size={13} className="text-primary" /> CORTES AI
             </span>
@@ -165,7 +175,7 @@ export function CortesDashboard() {
               <Button asChild size="lg" variant="outline"><Link to="/auth">Entrar na conta <ArrowRight /></Link></Button>
             </div>
           </div>
-          <div className="flex min-h-64 items-center justify-center rounded-2xl bg-muted/50 p-8">
+          <div className="relative flex min-h-64 items-center justify-center rounded-2xl border bg-muted/50 p-8 shadow-inner">
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border bg-background shadow-sm"><Scissors size={34} className="text-primary" /></div>
               <p className="font-semibold">Seu próximo corte começa aqui</p>
@@ -273,7 +283,7 @@ export function CortesDashboard() {
                   <div className="flex aspect-video items-center justify-center rounded-xl bg-muted"><Loader2 className="animate-spin" /></div>
                 )}
                 <p className="mt-3 text-xs text-muted-foreground">
-                  O corte selecionado é reenquadrado em 9:16 e pode ser exportado com legendas automáticas.
+                  O corte selecionado é preparado em 9:16 e pode ser exportado com legendas automáticas. A pontuação da IA é uma estimativa, não uma garantia de desempenho.
                 </p>
               </CardContent>
             </Card>
@@ -327,9 +337,9 @@ export function CortesDashboard() {
         )}
 
         <section className="mt-8 grid gap-4 md:grid-cols-3">
-          <Card><CardHeader><CardDescription>Projetos</CardDescription><CardTitle className="text-3xl">{project ? 1 : 0}</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Projetos desta sessão.</p></CardContent></Card>
+          <Card><CardHeader><CardDescription>Projetos</CardDescription><CardTitle className="text-3xl">{project ? 1 : 0}</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Acesse seu histórico para ver todos os projetos.</p></CardContent></Card>
           <Card><CardHeader><CardDescription>Cortes gerados</CardDescription><CardTitle className="text-3xl">{clips.length}</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Sugestões encontradas pela IA.</p></CardContent></Card>
-          <Card><CardHeader><CardDescription>Pipeline</CardDescription><CardTitle className="text-3xl">IA</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Upload → transcrição → seleção.</p></CardContent></Card>
+          <Card><CardHeader><CardDescription>Formato</CardDescription><CardTitle className="text-3xl">9:16</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Pronto para Reels, Shorts e TikTok.</p></CardContent></Card>
         </section>
       </main>
     </div>
