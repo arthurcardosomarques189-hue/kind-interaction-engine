@@ -234,6 +234,8 @@ export type Database = {
           minutes: number
           progress: number
           status: string
+          source_type: string
+          source_url: string | null
           title: string
           user_id: string
           video_name: string | null
@@ -248,6 +250,8 @@ export type Database = {
           minutes?: number
           progress?: number
           status?: string
+          source_type?: string
+          source_url?: string | null
           title: string
           user_id: string
           video_name?: string | null
@@ -262,6 +266,8 @@ export type Database = {
           minutes?: number
           progress?: number
           status?: string
+          source_type?: string
+          source_url?: string | null
           title?: string
           user_id?: string
           video_name?: string | null
