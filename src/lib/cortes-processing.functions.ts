@@ -18,8 +18,6 @@ export const queueCortesProcessing = createServerFn({ method: 'POST' })
     if (error || !project) throw new Error('Projeto não encontrado.');
     if (!project.video_path) throw new Error('Este projeto ainda não possui um vídeo.');
 
-    // Reserve credits before starting the expensive AI pipeline.
-    // The database function is authoritative and bypasses the charge only for the owner admin.
     const { data: creditsReserved, error: creditsError } = await context.supabase.rpc('reserve_processing_credits', {
       target: context.userId,
       amount: 5,
@@ -35,7 +33,12 @@ export const queueCortesProcessing = createServerFn({ method: 'POST' })
       .eq('user_id', context.userId);
 
     if (updateError) {
-      await context.supabase.rpc('refund_credits', { target: context.userId, amount: 5, reason: 'processing_queue_failed' });
+      await context.supabase.rpc('refund_processing_for_project', {
+        target: context.userId,
+        project_id: project.id,
+        amount: 5,
+        reason: 'processing_queue_failed',
+      });
       throw new Error('Não foi possível colocar o projeto na fila.');
     }
 
@@ -50,8 +53,10 @@ export const queueCortesProcessing = createServerFn({ method: 'POST' })
         .update({ status: 'failed', error_message: functionError.message })
         .eq('id', project.id)
         .eq('user_id', context.userId);
-      await context.supabase.rpc('refund_credits', {
+
+      await context.supabase.rpc('refund_processing_for_project', {
         target: context.userId,
+        project_id: project.id,
         amount: 5,
         reason: 'processing_start_failed',
       });
