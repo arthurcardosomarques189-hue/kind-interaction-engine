@@ -49,12 +49,31 @@ Deno.serve(async (req) => {
     const outputUrl = payload?.response?.url;
 
     if (renderStatus === 'done' && outputUrl) {
+      const outputPath = exportRow.output_path ?? `${userId}/${exportRow.project_id}/exports/${exportId}.mp4`;
+      const download = await fetch(outputUrl);
+      if (!download.ok) throw new Error('Não foi possível baixar o MP4 renderizado.');
+      const outputBlob = await download.blob();
+
+      const { error: uploadError } = await admin.storage
+        .from('cortes-videos')
+        .upload(outputPath, outputBlob, {
+          contentType: 'video/mp4',
+          upsert: true,
+        });
+      if (uploadError) throw new Error('Não foi possível salvar o MP4 renderizado.');
+
+      const { data: signedOutput, error: signedError } = await admin.storage
+        .from('cortes-videos')
+        .createSignedUrl(outputPath, 60 * 60 * 24);
+      if (signedError || !signedOutput?.signedUrl) throw new Error('Não foi possível criar o link seguro do MP4.');
+
       const { data: updated } = await admin.from('exports').update({
         status: 'completed',
-        output_url: outputUrl,
+        output_url: signedOutput.signedUrl,
+        output_path: outputPath,
         updated_at: new Date().toISOString(),
       }).eq('id', exportId).eq('user_id', userId).select('*').single();
-      return json(updated ?? { ...exportRow, status: 'completed', output_url: outputUrl });
+      return json(updated ?? { ...exportRow, status: 'completed', output_url: signedOutput.signedUrl, output_path: outputPath });
     }
 
     if (renderStatus === 'failed') {
