@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.check-cortes-export]
 verify_jwt = true
+
+[functions.import-youtube-cortes]
+verify_jwt = true
