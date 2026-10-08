@@ -26,7 +26,12 @@ export const getAdminData = createServerFn({ method: 'GET' }).middleware([requir
 export const updateAdminUser = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
   .inputValidator(z.object({ target: z.string().uuid(), credit_delta: z.number().int().default(0), new_plan: z.enum(['Free', 'Starter', 'Pro', 'Business']).optional(), new_suspended: z.boolean().optional() }))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.rpc('admin_update_user', data);
+    const { error } = await context.supabase.rpc('admin_update_user', {
+      target: data.target,
+      credit_delta: data.credit_delta,
+      ...(data.new_plan !== undefined ? { new_plan: data.new_plan } : {}),
+      ...(data.new_suspended !== undefined ? { new_suspended: data.new_suspended } : {}),
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

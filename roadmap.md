@@ -1,5 +1,8 @@
 # CORTES AI — full suite roadmap
 
+## Current repair
+- [ ] Resolve preview compilation errors without weakening owner permissions.
+
 ## Implemented foundation
 - AI cuts, transcription, clip scoring, upload and vertical export.
 - YouTube ingestion contract and private project storage.

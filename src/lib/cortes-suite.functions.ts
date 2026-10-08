@@ -2,10 +2,8 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 
-const auth = [requireSupabaseAuth];
-
 export const createCortesCheckout = createServerFn({ method: 'POST' })
-  .middleware(auth)
+  .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ planId: z.enum(['creator','pro','studio']) }))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.functions.invoke('create-mp-checkout', { body: data });
@@ -15,7 +13,7 @@ export const createCortesCheckout = createServerFn({ method: 'POST' })
   });
 
 export const generateCortesMedia = createServerFn({ method: 'POST' })
-  .middleware(auth)
+  .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ kind: z.enum(['image','video']), prompt: z.string().min(3), projectId: z.string().uuid().optional(), inputImagePath: z.string().optional() }))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.functions.invoke('generate-media', { body: data });
@@ -25,7 +23,7 @@ export const generateCortesMedia = createServerFn({ method: 'POST' })
   });
 
 export const checkCortesMedia = createServerFn({ method: 'POST' })
-  .middleware(auth)
+  .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ mediaJobId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.functions.invoke('check-media-generation', { body: data });
@@ -35,7 +33,7 @@ export const checkCortesMedia = createServerFn({ method: 'POST' })
   });
 
 export const startCortesDubbing = createServerFn({ method: 'POST' })
-  .middleware(auth)
+  .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ projectId: z.string().uuid(), sourceLanguage: z.string().min(2), targetLanguage: z.string().min(2) }))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.functions.invoke('dubbing-cortes', { body: data });
@@ -45,7 +43,7 @@ export const startCortesDubbing = createServerFn({ method: 'POST' })
   });
 
 export const publishCortes = createServerFn({ method: 'POST' })
-  .middleware(auth)
+  .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ publicationId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.functions.invoke('publish-cortes', { body: data });

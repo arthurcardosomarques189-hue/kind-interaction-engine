@@ -41,7 +41,7 @@ function CreativeSuite() {
           const Icon = module.icon;
           const content = <div className="group h-full rounded-2xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-sm"><div className="flex items-start justify-between gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon size={20} /></span><span className="rounded-full border px-2 py-1 text-[10px] font-semibold text-muted-foreground">{module.status}</span></div><h3 className="mt-4 font-semibold">{module.title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{module.description}</p>{module.action && <span className="mt-4 inline-flex text-xs font-semibold text-primary">Abrir módulo →</span>}{module.href && <span className="mt-4 inline-flex text-xs font-semibold text-primary">Abrir biblioteca →</span>}</div>;
           if (module.href) return <Link key={module.title} to={module.href}>{content}</Link>;
-          if (module.action) return <button key={module.title} type="button" className="text-left" onClick={() => scrollTo(module.action!)}>{content}</button>;
+          if (module.action) return <button key={module.title} type="button" className="text-left" onClick={() => { if (module.action) scrollTo(module.action); }}>{content}</button>;
           return <div key={module.title}>{content}</div>;
         })}
       </div>
@@ -110,7 +110,7 @@ export function CortesDashboard() {
         createdAt: data.created_at,
         videoPath: data.video_path,
         errorMessage: data.error_message,
-        sourceType: data.source_type as CortesProject['sourceType'],
+        sourceType: data.source_type === 'youtube' ? 'youtube' : 'upload',
         sourceUrl: data.source_url,
       };
       setProject(next);
@@ -123,7 +123,7 @@ export function CortesDashboard() {
           .order('score', { ascending: false });
 
         if (!cancelled) {
-          setClips((clipRows ?? []) as CortesClip[]);
+          setClips((clipRows ?? []).map((clip) => ({ id: clip.id, title: clip.title, startSeconds: clip.start_seconds, endSeconds: clip.end_seconds, score: clip.score, videoPath: clip.video_path })));
           setLoadingResults(false);
         }
 
@@ -488,7 +488,7 @@ export function CortesDashboard() {
                       </Button>
                       {exportResults[clip.id]?.status === 'completed' && exportResults[clip.id]?.outputUrl && (
                         <Button asChild size="sm" variant="outline">
-                          <a href={exportResults[clip.id].outputUrl!} target="_blank" rel="noreferrer">Abrir MP4</a>
+                          <a href={exportResults[clip.id]?.outputUrl ?? undefined} target="_blank" rel="noreferrer">Abrir MP4</a>
                         </Button>
                       )}
                     </div>
@@ -496,7 +496,7 @@ export function CortesDashboard() {
                       <p className="mt-2 text-xs text-muted-foreground">O vídeo está sendo renderizado. Aguarde.</p>
                     )}
                     {exportResults[clip.id]?.status === 'failed' && (
-                      <p className="mt-2 text-xs text-destructive">{exportResults[clip.id].error ?? 'Não foi possível gerar o vídeo.'}</p>
+                      <p className="mt-2 text-xs text-destructive">{exportResults[clip.id]?.error ?? 'Não foi possível gerar o vídeo.'}</p>
                     )}
                   </div>
                 ))}
