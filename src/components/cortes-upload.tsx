@@ -6,6 +6,7 @@ import { createCortesProject } from '@/lib/cortes-project.functions';
 import { queueCortesProcessing } from '@/lib/cortes-processing.functions';
 import { createYouTubeCortesProject } from '@/lib/cortes-youtube.functions';
 import { supabase } from '@/integrations/supabase/client';
+import { uploadCortesVideoResumable } from '@/lib/cortes-large-upload';
 import type { CortesProject } from '@/lib/cortes-project';
 
 function isYouTubeUrl(value: string) {
@@ -25,9 +26,10 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
   const [file, setFile] = useState<File | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploaded, setUploaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const MAX_VIDEO_SIZE = 24 * 1024 * 1024;
+  const MAX_VIDEO_SIZE = 500 * 1024 * 1024;
 
   function selectFile(next: File | undefined) {
     if (!next) return;
@@ -38,7 +40,7 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
       return;
     }
     if (next.size > MAX_VIDEO_SIZE) {
-      setError('O vídeo precisa ter no máximo 24 MB para este processamento.');
+      setError('O vídeo precisa ter no máximo 500 MB. Vídeos maiores usam upload em partes e processamento assíncrono.');
       return;
     }
     setFile(next);
@@ -55,10 +57,8 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = project.user_id + '/' + project.id + '/original-' + crypto.randomUUID() + '-' + safeName;
 
-      const { error: uploadError } = await supabase.storage.from('cortes-videos').upload(path, file, {
-        contentType: file.type, upsert: false,
-      });
-      if (uploadError) throw new Error('Não foi possível enviar o vídeo para o armazenamento.');
+      setUploadProgress(1);
+      await uploadCortesVideoResumable(path, file, setUploadProgress);
 
       const { error: updateError } = await supabase.from('projects').update({
         video_path: path, video_name: file.name, video_size: file.size, source_type: 'upload',
@@ -171,7 +171,7 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
             >
               <Upload className="mb-3 text-primary" size={30} />
               <strong>Arraste seu vídeo aqui</strong>
-              <span className="mt-1 text-sm text-muted-foreground">ou clique para escolher um arquivo de vídeo</span>
+              <span className="mt-1 text-sm text-muted-foreground">ou clique para escolher um arquivo de vídeo (até 500 MB)</span>
               <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={e => selectFile(e.target.files?.[0])} />
             </button>
 
@@ -188,7 +188,7 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
               </div>
             )}
 
-            <Button className="mt-4 w-full" disabled={!file || busy} onClick={() => void createProjectFromFile()}>
+            {busy && file && uploadProgress > 0 && uploadProgress < 100 && (\n              <div className="mt-4 rounded-xl border p-3">\n                <div className="mb-2 flex justify-between text-xs text-muted-foreground">\n                  <span>Enviando vídeo em partes...</span><span>{uploadProgress}%</span>\n                </div>\n                <div className="h-2 overflow-hidden rounded-full bg-muted">\n                  <div className="h-full bg-primary transition-all" style={{ width: uploadProgress + '%' }} />\n                </div>\n              </div>\n            )}\n\n            <Button className="mt-4 w-full" disabled={!file || busy} onClick={() => void createProjectFromFile()}>
               {busy ? <><Loader2 className="animate-spin" /> Enviando e iniciando IA...</> : <><Sparkles /> Criar cortes com IA</>}
             </Button>
           </>
