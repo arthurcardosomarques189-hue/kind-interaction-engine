@@ -58,6 +58,7 @@ export type Database = {
           user_id: string
           provider: string
           render_id: string | null
+          output_path: string | null
           status: string
           output_url: string | null
           error_message: string | null
@@ -71,6 +72,7 @@ export type Database = {
           user_id: string
           provider?: string
           render_id?: string | null
+          output_path?: string | null
           status?: string
           output_url?: string | null
           error_message?: string | null
@@ -84,6 +86,7 @@ export type Database = {
           user_id?: string
           provider?: string
           render_id?: string | null
+          output_path?: string | null
           status?: string
           output_url?: string | null
           error_message?: string | null
