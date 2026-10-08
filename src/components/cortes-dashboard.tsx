@@ -273,7 +273,7 @@ export function CortesDashboard() {
                   <div className="flex aspect-video items-center justify-center rounded-xl bg-muted"><Loader2 className="animate-spin" /></div>
                 )}
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Agora cada corte pode ser renderizado em MP4 9:16. Legendas automáticas e editor visual entram na próxima etapa.
+                  O corte selecionado é reenquadrado em 9:16 e pode ser exportado com legendas automáticas.
                 </p>
               </CardContent>
             </Card>
@@ -293,13 +293,10 @@ export function CortesDashboard() {
                       </div>
                       <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{clip.score}/100</span>
                     </div>
-                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock3 size={14} /> {formatTime(clip.startSeconds)} – {formatTime(clip.endSeconds)}
-                    </div>
                     <button
                       type="button"
                       onClick={() => startClip(clip)}
-                      className="w-full text-left"
+                      className="w-full rounded-lg text-left"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
