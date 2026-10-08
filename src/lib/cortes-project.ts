@@ -8,12 +8,23 @@ export type CortesProject = {
   status: ProjectStatus;
   progress: number;
   createdAt: string;
+  videoPath?: string | null;
+  errorMessage?: string | null;
+};
+
+export type CortesClip = {
+  id: string;
+  title: string;
+  startSeconds: number;
+  endSeconds: number;
+  score: number;
+  videoPath?: string | null;
 };
 
 export function createLocalProject(file: File): CortesProject {
   return {
     id: crypto.randomUUID(),
-    title: file.name.replace(/\\.[^/.]+$/, ''),
+    title: file.name.replace(/\.[^/.]+$/, ''),
     fileName: file.name,
     fileSize: file.size,
     status: 'queued',
