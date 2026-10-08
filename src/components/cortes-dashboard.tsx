@@ -4,7 +4,7 @@ import { CortesUpload } from '@/components/cortes-upload';
 import { getCortesExportStatus, renderCortesClip } from '@/lib/cortes-export.functions';
 import type { CortesClip, CortesProject } from '@/lib/cortes-project';
 import { Link } from '@tanstack/react-router';
-import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle, History } from 'lucide-react';
+import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle, History, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,8 +33,23 @@ export function CortesDashboard() {
   const [exportResults, setExportResults] = useState<Record<string, { status: string; outputUrl?: string | null; error?: string | null }>>({});
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const [captionStyle, setCaptionStyle] = useState<'highlight' | 'karaoke' | 'pop' | 'fade' | 'slide' | 'bounce' | 'typewriter'>('highlight');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const account = useQuery({ queryKey: ['cortes-account'], queryFn: () => getAccount(), staleTime: 30_000 });
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem('cortes-ai-theme');
+    const nextTheme = saved === 'dark' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    document.documentElement.classList.toggle('dark', nextTheme === 'dark');
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    window.localStorage.setItem('cortes-ai-theme', nextTheme);
+    document.documentElement.classList.toggle('dark', nextTheme === 'dark');
+  };
 
   useEffect(() => {
     if (!project) return;
@@ -152,6 +167,10 @@ export function CortesDashboard() {
               </span>
             )}
             {account.data?.owner && <Link to="/admin" className="text-sm font-medium text-primary hover:underline">Admin</Link>}
+            <Button type="button" variant="outline" size="sm" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'} title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}>
+              {theme === 'dark' ? <Sun /> : <Moon />}
+              <span className="hidden sm:inline">{theme === 'dark' ? 'Claro' : 'Escuro'}</span>
+            </Button>
             <Button asChild variant="outline" size="sm"><Link to="/auth">Entrar</Link></Button>
           </div>
         </div>
@@ -306,7 +325,13 @@ export function CortesDashboard() {
                           <span className="text-xs font-semibold text-muted-foreground">CORTE {index + 1}</span>
                           <strong className="mt-1 block">{clip.title}</strong>
                         </div>
-                        <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{clip.score}/100</span>
+                        <div className="text-right">
+                          <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{clip.score}/100</span>
+                          <span className="mt-1 block text-[10px] font-medium text-muted-foreground">Nota do corte</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.max(0, Math.min(100, clip.score))}%` }} />
                       </div>
                       <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                         <Clock3 size={14} /> {formatTime(clip.startSeconds)} – {formatTime(clip.endSeconds)}
