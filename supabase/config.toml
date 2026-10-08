@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.import-youtube-cortes]
 verify_jwt = true
+
+[functions.generate-clip-content]
+verify_jwt = true
