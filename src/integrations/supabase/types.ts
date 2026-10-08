@@ -49,6 +49,33 @@ export type Database = {
           },
         ]
       }
+      transcripts: {
+        Row: {
+          created_at: string
+          id: string
+          language: string | null
+          project_id: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          project_id: string
+          text?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          project_id?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -121,29 +148,44 @@ export type Database = {
         Row: {
           created_at: string
           cuts: number
+          error_message: string | null
           id: string
           minutes: number
+          progress: number
           status: string
           title: string
           user_id: string
+          video_name: string | null
+          video_path: string | null
+          video_size: number | null
         }
         Insert: {
           created_at?: string
           cuts?: number
+          error_message?: string | null
           id?: string
           minutes?: number
+          progress?: number
           status?: string
           title: string
           user_id: string
+          video_name?: string | null
+          video_path?: string | null
+          video_size?: number | null
         }
         Update: {
           created_at?: string
           cuts?: number
+          error_message?: string | null
           id?: string
           minutes?: number
+          progress?: number
           status?: string
           title?: string
           user_id?: string
+          video_name?: string | null
+          video_path?: string | null
+          video_size?: number | null
         }
         Relationships: [
           {
