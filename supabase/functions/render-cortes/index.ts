@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
             {
               clips: [{
                 alias: 'source-video',
-                asset: { type: 'video', src: signed.signedUrl },
+                asset: { type: 'video', src: signed.signedUrl, trim: start },
                 start: 0,
                 length,
                 fit: 'crop',
