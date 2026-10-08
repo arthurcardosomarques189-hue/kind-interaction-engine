@@ -1,0 +1,3 @@
+CREATE POLICY cortes_videos_insert_own ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'cortes-videos' AND (storage.foldername(name))[1] = auth.uid()::text AND EXISTS (SELECT 1 FROM public.projects p JOIN public.profiles pr ON pr.id = p.user_id WHERE p.id::text = (storage.foldername(name))[2] AND p.user_id = auth.uid() AND NOT pr.suspended));
+CREATE POLICY cortes_videos_read_own ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'cortes-videos' AND ((storage.foldername(name))[1] = auth.uid()::text OR public.is_owner()));
+CREATE POLICY cortes_videos_delete_own ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'cortes-videos' AND (storage.foldername(name))[1] = auth.uid()::text);
