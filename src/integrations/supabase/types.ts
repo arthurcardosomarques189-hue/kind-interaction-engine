@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      clips: {
+        Row: {
+          created_at: string
+          end_seconds: number
+          id: string
+          project_id: string
+          score: number
+          start_seconds: number
+          title: string
+          user_id: string
+          video_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          end_seconds: number
+          id?: string
+          project_id: string
+          score?: number
+          start_seconds: number
+          title: string
+          user_id: string
+          video_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          end_seconds?: number
+          id?: string
+          project_id?: string
+          score?: number
+          start_seconds?: number
+          title?: string
+          user_id?: string
+          video_path?: string | null
+        }
+        Relationships: []
+      }
       credit_ledger: {
         Row: {
           actor_id: string | null
