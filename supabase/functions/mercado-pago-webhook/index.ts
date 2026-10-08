@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   const raw = await req.text();
   if (webhookSecret) {
     const signature = req.headers.get("x-signature") || "";
-    if (!await validSignature(signature, webhookSecret, raw)) return new Response("Invalid signature", { status: 401 });
+    if (!await validSignature(signature, req.headers.get("x-request-id") || "", bodyDataId(raw), webhookSecret)) return new Response("Invalid signature", { status: 401 });
   }
 
   let body: Record<string, any> = {};
@@ -87,7 +87,7 @@ function mapPaymentStatus(s: string) {
   if (s === "refunded") return "refunded";
   return "pending";
 }
-async function validSignature(header: string, secret: string, body: string) {
+function bodyDataId(body: string) { try { return String(JSON.parse(body)?.data?.id || ""); } catch { return ""; } }\nasync function validSignature(header: string, requestId: string, dataId: string, secret: string) {
   const parsed = Object.fromEntries(header.split(",").map(p => p.split("=")).filter(p => p.length === 2));
   if (!parsed.v1) return false;
   const ts = parsed.ts || "";
@@ -96,5 +96,5 @@ async function validSignature(header: string, secret: string, body: string) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
   const hex = [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, "0")).join("");
-  return hex === parsed.v1 || !webhookSecret;
+  return hex === parsed.v1;
 }
