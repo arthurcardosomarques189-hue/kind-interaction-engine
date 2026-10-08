@@ -148,10 +148,12 @@
  --background: oklch(.985 .004 165); --foreground: oklch(.18 .03 165);
  --card: oklch(1 0 0); --card-foreground: var(--foreground);
  --popover: var(--card); --popover-foreground: var(--foreground);
- --primary: oklch(.45 .15 157); --primary-foreground: oklch(.98 .01 157);
+ --primary: oklch(.79 .24 142); --primary-foreground: oklch(.19 .025 142);
  --secondary: oklch(.95 .006 165); --secondary-foreground: var(--foreground);
  --muted: var(--secondary); --muted-foreground: oklch(.48 .01 165);
- --accent: oklch(.94 .025 157); --accent-foreground: oklch(.35 .12 157);
+ --accent: oklch(.95 .055 142); --accent-foreground: oklch(.36 .12 142);
+ --led-glow: oklch(.79 .24 142 / .28);
+ --led-shadow: 0 0 16px var(--led-glow);
  --border: oklch(.88 .008 165); --input: var(--border); --ring: var(--primary);
  --sidebar: oklch(.97 .004 165); --destructive: oklch(.55 .19 25);
  --metric-blue: oklch(.55 .14 245); --metric-amber: oklch(.62 .15 85); --metric-rose: oklch(.58 .14 15);
@@ -163,10 +165,12 @@
  --background: oklch(.145 .004 165); --foreground: oklch(.94 .005 165);
  --card: oklch(.185 .005 165); --card-foreground: var(--foreground);
  --popover: var(--card); --popover-foreground: var(--foreground);
- --primary: oklch(.83 .15 157); --primary-foreground: oklch(.18 .03 157);
+ --primary: oklch(.87 .25 142); --primary-foreground: oklch(.18 .03 142);
  --secondary: oklch(.235 .006 165); --secondary-foreground: var(--foreground);
  --muted: var(--secondary); --muted-foreground: oklch(.63 .01 165);
- --accent: oklch(.245 .015 157); --accent-foreground: var(--primary);
+ --accent: oklch(.245 .035 142); --accent-foreground: var(--primary);
+ --led-glow: oklch(.87 .25 142 / .24);
+ --led-shadow: 0 0 18px var(--led-glow);
  --border: oklch(.28 .005 165); --input: var(--border); --ring: var(--primary);
  --sidebar: oklch(.165 .005 165); --destructive: oklch(.7 .17 25);
  --metric-blue: oklch(.76 .12 245); --metric-amber: oklch(.8 .13 85); --metric-rose: oklch(.76 .12 15);
@@ -175,6 +179,7 @@
 body { font-family: 'DM Sans', sans-serif; margin: 0; letter-spacing: 0; }
 h1,h2,h3,.brand { font-family: 'Manrope', sans-serif; letter-spacing: 0; }
 button,a,input,select { -webkit-tap-highlight-color: transparent; }
+.bg-primary, .brand-symbol, .nav-dot, .live-label i { box-shadow: var(--led-shadow); }
 .app-layout { display: grid; grid-template-columns: 235px minmax(0,1fr); min-height: 100vh; }
 .app-sidebar { background: var(--sidebar); border-right: 1px solid var(--border); padding: 32px 20px 0; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; }
 .brand { display:flex; align-items:center; gap:10px; font-size:22px; font-weight:800; text-decoration:none; color:var(--foreground); white-space:nowrap; }
