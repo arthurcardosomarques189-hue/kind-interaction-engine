@@ -85,8 +85,9 @@ Deno.serve(async (req) => {
       }).eq('id', exportId).eq('user_id', userId).select('*').single();
 
       // Return the export credit when the provider reports a failed render.
-      await admin.rpc('refund_credits', {
+      await admin.rpc('refund_export_for_export', {
         target: userId,
+        export_id: exportId,
         amount: 1,
         reason: 'export_render_failed_async',
       });
