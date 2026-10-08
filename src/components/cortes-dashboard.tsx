@@ -29,6 +29,8 @@ export function CortesDashboard() {
   const [selectedClip, setSelectedClip] = useState<CortesClip | null>(null);
   const [exportingClipId, setExportingClipId] = useState<string | null>(null);
   const [exportResults, setExportResults] = useState<Record<string, { status: string; outputUrl?: string | null; error?: string | null }>>({});
+  const [captionsEnabled, setCaptionsEnabled] = useState(true);
+  const [captionStyle, setCaptionStyle] = useState<'highlight' | 'karaoke' | 'pop' | 'fade' | 'slide' | 'bounce' | 'typewriter'>('highlight');
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -99,7 +101,7 @@ export function CortesDashboard() {
     if (!project || exportingClipId) return;
     setExportingClipId(clip.id);
     try {
-      const created = await renderCortesClip({ data: { projectId: project.id, clipId: clip.id } });
+      const created = await renderCortesClip({ data: { projectId: project.id, clipId: clip.id, captions: captionsEnabled, captionStyle } });
       let latest = await getCortesExportStatus({ data: { exportId: created.exportId } });
       for (let attempt = 0; attempt < 45 && latest.status !== 'completed' && latest.status !== 'failed'; attempt++) {
         setExportResults((current) => ({ ...current, [clip.id]: { status: latest.status } }));
@@ -216,6 +218,46 @@ export function CortesDashboard() {
         </section>
 
         {project?.status === 'completed' && clips.length > 0 && (
+          <section className="mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Scissors className="text-primary" /> Editor vertical</CardTitle>
+                <CardDescription>Configure o formato do corte e as legendas antes de gerar o MP4.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-xl border p-4">
+                    <p className="text-sm font-semibold">Formato</p>
+                    <p className="mt-1 text-xs text-muted-foreground">O vídeo será exportado em 1080 × 1920.</p>
+                    <div className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm font-medium">9:16 · Vertical</div>
+                  </div>
+                  <div className="rounded-xl border p-4">
+                    <p className="text-sm font-semibold">Legendas automáticas</p>
+                    <p className="mt-1 text-xs text-muted-foreground">A fala é transcrita automaticamente na renderização.</p>
+                    <label className="mt-3 flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={captionsEnabled} onChange={(event) => setCaptionsEnabled(event.target.checked)} />
+                      Ativar legendas
+                    </label>
+                  </div>
+                  <div className="rounded-xl border p-4">
+                    <label className="text-sm font-semibold" htmlFor="caption-style">Estilo das legendas</label>
+                    <select id="caption-style" value={captionStyle} onChange={(event) => setCaptionStyle(event.target.value as typeof captionStyle)} className="mt-3 w-full rounded-lg border bg-background px-3 py-2 text-sm">
+                      <option value="highlight">Highlight</option>
+                      <option value="karaoke">Karaokê</option>
+                      <option value="pop">Pop</option>
+                      <option value="bounce">Bounce</option>
+                      <option value="slide">Slide</option>
+                      <option value="fade">Fade</option>
+                      <option value="typewriter">Máquina de escrever</option>
+                    </select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {project?.status === 'completed' && clips.length > 0 && (
           <section className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
             <Card className="overflow-hidden">
               <CardHeader>
@@ -226,7 +268,7 @@ export function CortesDashboard() {
               </CardHeader>
               <CardContent>
                 {videoUrl ? (
-                  <video ref={videoRef} src={videoUrl} controls className="aspect-video w-full rounded-xl bg-black" />
+                  <div className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl bg-black shadow-lg"><video ref={videoRef} src={videoUrl} controls className="aspect-[9/16] w-full object-cover" /></div>
                 ) : (
                   <div className="flex aspect-video items-center justify-center rounded-xl bg-muted"><Loader2 className="animate-spin" /></div>
                 )}
