@@ -105,7 +105,8 @@ declare
   current_balance integer;
   unlimited boolean;
 begin
-  if auth.uid() is null or auth.uid() <> target or amount <= 0 then return false; end if;
+  if auth.uid() is not null and auth.uid() <> target then return false; end if;
+  if amount <= 0 then return false; end if;
 
   select coalesce(credit_balance, 0), coalesce(unlimited_credits, false)
     into current_balance, unlimited
