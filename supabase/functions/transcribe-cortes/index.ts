@@ -223,14 +223,27 @@ Deno.serve(async (req) => {
 
     EdgeRuntime.waitUntil(
       processProject(body.projectId).catch(async (error) => {
-        await admin
+        const message =
+          error instanceof Error ? error.message : "Erro de processamento";
+        const { data: failedProject } = await admin
           .from("projects")
           .update({
             status: "failed",
-            error_message:
-              error instanceof Error ? error.message : "Erro de processamento",
+            error_message: message,
           })
-          .eq("id", body.projectId);
+          .eq("id", body.projectId)
+          .select("user_id")
+          .single();
+
+        // The processing reservation was made before this async job started.
+        // Refund it when the background job fails.
+        if (failedProject?.user_id) {
+          await admin.rpc("refund_credits", {
+            target: failedProject.user_id,
+            amount: 5,
+            reason: "processing_failed",
+          });
+        }
       }),
     );
 
