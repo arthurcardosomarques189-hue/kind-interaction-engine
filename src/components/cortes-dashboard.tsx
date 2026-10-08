@@ -4,7 +4,7 @@ import { CortesUpload } from '@/components/cortes-upload';
 import { getCortesExportStatus, renderCortesClip } from '@/lib/cortes-export.functions';
 import type { CortesClip, CortesProject } from '@/lib/cortes-project';
 import { Link } from '@tanstack/react-router';
-import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle, History, Sun, Moon } from 'lucide-react';
+import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle, History, Sun, Moon, Youtube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +19,7 @@ const features = [
 
 
 const suiteModules = [
+  { icon: Youtube, title: 'Importar do YouTube', description: 'Cole o link de um vídeo que você tem permissão para processar e envie para a IA.', status: 'Disponível', action: 'novo-projeto' },
   { icon: Scissors, title: 'Cortes com IA', description: 'Encontre os melhores momentos e gere cortes verticais.', status: 'Disponível', action: 'novo-projeto' },
   { icon: Play, title: 'Editor vertical', description: 'Pré-visualize, escolha legendas e exporte em 9:16.', status: 'Disponível', action: 'editor-vertical' },
   { icon: Sparkles, title: 'Títulos e ganchos com IA', description: 'Estrutura para transformar cada corte em conteúdo pronto para publicar.', status: 'Próxima etapa' },
