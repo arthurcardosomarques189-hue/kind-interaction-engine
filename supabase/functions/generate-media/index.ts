@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     prompt?: string;
     projectId?: string;
     inputImagePath?: string;
-    ratio?: "1280:720" | "720:1280" | "960:960";
+    ratio?: "1280:720" | "720:1280" | "960:960" | "1584:672" | "1104:832" | "832:1104" | "672:1584";
     duration?: 5 | 10;
   };
 
@@ -86,6 +86,11 @@ Deno.serve(async (req) => {
   const id = crypto.randomUUID();
   const ratio = body.ratio || "720:1280";
   const duration = body.duration || 5;
+
+  const textOnlyRatios = new Set(["1280:720", "720:1280"]);
+  if (!promptImage && !textOnlyRatios.has(ratio)) {
+    return errorResponse("Para vídeo por texto com Gen-4.5, o formato deve ser 1280:720 ou 720:1280");
+  }
 
   const { error: insertError } = await db.from("cortes_media_jobs").insert({
     id, user_id: user.id, project_id: body.projectId || null, kind: "video",
