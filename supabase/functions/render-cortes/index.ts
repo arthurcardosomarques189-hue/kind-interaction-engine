@@ -64,6 +64,14 @@ Deno.serve(async (req) => {
 
     if (signedError || !signed?.signedUrl) throw new Error('Não foi possível preparar o vídeo para renderização.');
 
+    const { data: creditsReserved, error: creditsError } = await admin.rpc('reserve_export_credits', {
+      target: userId,
+      amount: 1,
+    });
+    if (creditsError || !creditsReserved) {
+      return json({ error: 'Você não possui créditos suficientes para exportar este vídeo.' }, 402);
+    }
+
     const { data: exportRow, error: exportError } = await admin
       .from('exports')
       .insert({
@@ -76,7 +84,10 @@ Deno.serve(async (req) => {
       .select('*')
       .single();
 
-    if (exportError || !exportRow) throw new Error('Não foi possível criar a exportação.');
+    if (exportError || !exportRow) {
+      await admin.rpc('refund_credits', { target: userId, amount: 1, reason: 'export_row_failed' });
+      throw new Error('Não foi possível criar a exportação.');
+    }
 
     const renderResponse = await fetch('https://api.shotstack.io/edit/v1/render', {
       method: 'POST',
@@ -133,6 +144,7 @@ Deno.serve(async (req) => {
         error_message: renderJson?.message ?? renderJson?.response?.message ?? 'Falha ao enviar renderização.',
         updated_at: new Date().toISOString(),
       }).eq('id', exportRow.id);
+      await admin.rpc('refund_credits', { target: userId, amount: 1, reason: 'export_render_failed' });
       throw new Error(renderJson?.message ?? 'Falha ao enviar renderização.');
     }
 
