@@ -1,4 +1,4 @@
-project_id = "amlreiwuqspfqcysgown"
+project_id = "mgaqcyztnjftwtribkfd"
 
 [functions.transcribe-cortes]
 verify_jwt = true
