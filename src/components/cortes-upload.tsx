@@ -188,7 +188,18 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
               </div>
             )}
 
-            {busy && file && uploadProgress > 0 && uploadProgress < 100 && (\n              <div className="mt-4 rounded-xl border p-3">\n                <div className="mb-2 flex justify-between text-xs text-muted-foreground">\n                  <span>Enviando vídeo em partes...</span><span>{uploadProgress}%</span>\n                </div>\n                <div className="h-2 overflow-hidden rounded-full bg-muted">\n                  <div className="h-full bg-primary transition-all" style={{ width: uploadProgress + '%' }} />\n                </div>\n              </div>\n            )}\n\n            <Button className="mt-4 w-full" disabled={!file || busy} onClick={() => void createProjectFromFile()}>
+            {busy && file && uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="mt-4 rounded-xl border p-3">
+                <div className="mb-2 flex justify-between text-xs text-muted-foreground">
+                  <span>Enviando vídeo em partes...</span><span>{uploadProgress}%</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full bg-primary transition-all" style={{ width: uploadProgress + '%' }} />
+                </div>
+              </div>
+            )}
+
+            <Button className="mt-4 w-full" disabled={!file || busy} onClick={() => void createProjectFromFile()}>
               {busy ? <><Loader2 className="animate-spin" /> Enviando e iniciando IA...</> : <><Sparkles /> Criar cortes com IA</>}
             </Button>
           </>
