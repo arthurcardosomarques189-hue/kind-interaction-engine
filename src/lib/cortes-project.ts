@@ -10,6 +10,8 @@ export type CortesProject = {
   createdAt: string;
   videoPath?: string | null;
   errorMessage?: string | null;
+  sourceType?: 'upload' | 'youtube';
+  sourceUrl?: string | null;
 };
 
 export type CortesClip = {
