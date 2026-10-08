@@ -24,6 +24,16 @@ export const generateCortesMedia = createServerFn({ method: 'POST' })
     return result;
   });
 
+export const checkCortesMedia = createServerFn({ method: 'POST' })
+  .middleware(auth)
+  .inputValidator(z.object({ mediaJobId: z.string().uuid() }))
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.functions.invoke('check-media-generation', { body: data });
+    if (error) throw new Error(error.message || 'Não foi possível verificar a geração da mídia.');
+    if (result?.error) throw new Error(result.error);
+    return result;
+  });
+
 export const startCortesDubbing = createServerFn({ method: 'POST' })
   .middleware(auth)
   .inputValidator(z.object({ projectId: z.string().uuid(), sourceLanguage: z.string().min(2), targetLanguage: z.string().min(2) }))
