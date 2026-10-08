@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      exports: {
+        Row: {
+          id: string
+          project_id: string
+          clip_id: string
+          user_id: string
+          provider: string
+          render_id: string | null
+          status: string
+          output_url: string | null
+          error_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          clip_id: string
+          user_id: string
+          provider?: string
+          render_id?: string | null
+          status?: string
+          output_url?: string | null
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          clip_id?: string
+          user_id?: string
+          provider?: string
+          render_id?: string | null
+          status?: string
+          output_url?: string | null
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       credit_ledger: {
         Row: {
           actor_id: string | null
