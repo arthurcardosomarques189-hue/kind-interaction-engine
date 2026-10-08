@@ -237,6 +237,9 @@ export type Database = {
           source_type: string
           source_url: string | null
           title: string
+          transcription_job_id: string | null
+          transcription_provider: string | null
+          transcription_status: string | null
           user_id: string
           video_name: string | null
           video_path: string | null
@@ -253,6 +256,9 @@ export type Database = {
           source_type?: string
           source_url?: string | null
           title: string
+          transcription_job_id?: string | null
+          transcription_provider?: string | null
+          transcription_status?: string | null
           user_id: string
           video_name?: string | null
           video_path?: string | null
@@ -269,6 +275,9 @@ export type Database = {
           source_type?: string
           source_url?: string | null
           title?: string
+          transcription_job_id?: string | null
+          transcription_provider?: string | null
+          transcription_status?: string | null
           user_id?: string
           video_name?: string | null
           video_path?: string | null

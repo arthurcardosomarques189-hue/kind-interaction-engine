@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.mercado-pago-webhook]
 verify_jwt = false
+
+[functions.assemblyai-transcription-webhook]
+verify_jwt = false
