@@ -31,6 +31,8 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const projectId = String(body.projectId ?? '');
     const clipId = String(body.clipId ?? '');
+    const captions = body.captions !== false;
+    const captionStyle = ['highlight', 'karaoke', 'pop', 'fade', 'slide', 'bounce', 'typewriter', 'none'].includes(body.captionStyle) ? body.captionStyle : 'highlight';
 
     if (!projectId || !clipId) return json({ error: 'Projeto e corte são obrigatórios.' }, 400);
 
@@ -85,14 +87,35 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         timeline: {
-          tracks: [{
-            clips: [{
-              asset: { type: 'video', src: signed.signedUrl },
-              start: 0,
-              length,
-              fit: 'crop',
-            }],
-          }],
+          tracks: [
+            ...(captions ? [{
+              clips: [{
+                asset: {
+                  type: 'rich-caption',
+                  src: 'alias://source-video',
+                  font: { family: 'Arial', size: 68, color: '#ffffff', weight: 700 },
+                  align: { vertical: 'bottom' },
+                  stroke: { width: 4, color: '#000000', opacity: 1 },
+                  animation: { style: captionStyle },
+                  active: { font: { color: '#ffe600' } },
+                },
+                start: 0,
+                length: 'end',
+                width: 900,
+                height: 400,
+                offset: { x: 0, y: 0.28 },
+              }],
+            }] : []),
+            {
+              clips: [{
+                alias: 'source-video',
+                asset: { type: 'video', src: signed.signedUrl },
+                start: 0,
+                length,
+                fit: 'crop',
+              }],
+            },
+          ],
         },
         output: {
           format: 'mp4',
