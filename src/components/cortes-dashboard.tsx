@@ -1,20 +1,103 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CortesUpload } from '@/components/cortes-upload';
-import type { CortesProject } from '@/lib/cortes-project';
+import type { CortesClip, CortesProject } from '@/lib/cortes-project';
 import { Link } from '@tanstack/react-router';
-import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap } from 'lucide-react';
+import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 const features = [
-  { icon: Sparkles, title: 'Encontre os melhores momentos', description: 'A IA identifica trechos com maior potencial de retenção.' },
-  { icon: Scissors, title: 'Gere vários cortes', description: 'Transforme um vídeo longo em vários clipes prontos para editar.' },
-  { icon: Play, title: 'Formato vertical', description: 'Prepare seus cortes para Shorts, Reels e TikTok em 9:16.' },
+  { icon: Sparkles, title: 'Encontre os melhores momentos', description: 'A IA transcreve o vídeo e identifica trechos com maior potencial.' },
+  { icon: Scissors, title: 'Gere vários cortes', description: 'Receba sugestões de cortes com início, fim e pontuação.' },
+  { icon: Play, title: 'Pronto para vertical', description: 'A estrutura já fica preparada para a próxima etapa de edição 9:16.' },
 ];
 
+function formatTime(seconds: number) {
+  const total = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
 export function CortesDashboard() {
-  const [showInfo, setShowInfo] = useState(false);
   const [project, setProject] = useState<CortesProject | null>(null);
+  const [clips, setClips] = useState<CortesClip[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [loadingResults, setLoadingResults] = useState(false);
+  const [selectedClip, setSelectedClip] = useState<CortesClip | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!project) return;
+
+    let cancelled = false;
+    const poll = async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id,title,status,progress,error_message,video_path,video_name,video_size,created_at')
+        .eq('id', project.id)
+        .single();
+
+      if (cancelled || error || !data) return;
+
+      const next: CortesProject = {
+        id: data.id,
+        title: data.title,
+        fileName: data.video_name ?? project.fileName,
+        fileSize: data.video_size ?? project.fileSize,
+        status: data.status as CortesProject['status'],
+        progress: data.progress ?? 0,
+        createdAt: data.created_at,
+        videoPath: data.video_path,
+        errorMessage: data.error_message,
+      };
+      setProject(next);
+
+      if (next.status === 'completed') {
+        const { data: clipRows } = await supabase
+          .from('clips')
+          .select('id,title,start_seconds,end_seconds,score,video_path')
+          .eq('project_id', project.id)
+          .order('score', { ascending: false });
+
+        if (!cancelled) {
+          setClips((clipRows ?? []) as CortesClip[]);
+          setLoadingResults(false);
+        }
+
+        if (next.videoPath && !videoUrl) {
+          const { data: signed } = await supabase.storage
+            .from('cortes-videos')
+            .createSignedUrl(next.videoPath, 60 * 60);
+          if (!cancelled) setVideoUrl(signed?.signedUrl ?? null);
+        }
+      } else if (next.status === 'failed') {
+        setLoadingResults(false);
+      }
+    };
+
+    setLoadingResults(true);
+    void poll();
+    const timer = window.setInterval(poll, 2500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [project?.id]);
+
+  useEffect(() => {
+    if (!selectedClip || !videoRef.current) return;
+    videoRef.current.currentTime = selectedClip.startSeconds;
+    void videoRef.current.play();
+  }, [selectedClip]);
+
+  const startClip = (clip: CortesClip) => {
+    setSelectedClip(clip);
+    window.setTimeout(() => {
+      if (videoRef.current) videoRef.current.currentTime = clip.startSeconds;
+    }, 50);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,23 +122,20 @@ export function CortesDashboard() {
             </span>
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">Transforme vídeos longos em cortes que prendem atenção.</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Envie seu vídeo, deixe a IA encontrar os melhores momentos e organize seus cortes em um único lugar.
+              Envie seu vídeo, deixe a IA encontrar os melhores momentos e visualize os cortes sugeridos.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Button size="lg" onClick={() => setShowInfo(true)}><Upload /> Novo projeto</Button>
+              <Button size="lg" onClick={() => document.getElementById('novo-projeto')?.scrollIntoView({ behavior: 'smooth' })}>
+                <Upload /> Novo projeto
+              </Button>
               <Button asChild size="lg" variant="outline"><Link to="/auth">Entrar na conta <ArrowRight /></Link></Button>
             </div>
-            {showInfo && (
-              <div role="status" className="mt-4 rounded-xl border bg-muted/40 p-4 text-sm">
-                <strong>Próxima etapa:</strong> conectaremos o upload e o processamento real do vídeo ao backend do CORTES AI.
-              </div>
-            )}
           </div>
           <div className="flex min-h-64 items-center justify-center rounded-2xl bg-muted/50 p-8">
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border bg-background shadow-sm"><Scissors size={34} className="text-primary" /></div>
               <p className="font-semibold">Seu próximo corte começa aqui</p>
-              <p className="mt-1 text-sm text-muted-foreground">Upload → IA → cortes → exportação</p>
+              <p className="mt-1 text-sm text-muted-foreground">Upload → Transcrição → IA → cortes</p>
             </div>
           </div>
         </section>
@@ -68,18 +148,96 @@ export function CortesDashboard() {
           ))}
         </section>
 
-        <section className="mt-8 grid gap-4 md:grid-cols-3">
-          <Card><CardHeader><CardDescription>Projetos</CardDescription><CardTitle className="text-3xl">0</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Seus projetos aparecerão aqui.</p></CardContent></Card>
-          <Card><CardHeader><CardDescription>Cortes gerados</CardDescription><CardTitle className="text-3xl">0</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Ainda não há cortes processados.</p></CardContent></Card>
-          <Card><CardHeader><CardDescription>Tempo economizado</CardDescription><CardTitle className="flex items-center gap-2 text-3xl">0 <Clock3 size={22} /></CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Calcularemos após os primeiros processamentos.</p></CardContent></Card>
+        <section id="novo-projeto" className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
+          <CortesUpload onCreated={(created) => { setProject(created); setClips([]); setVideoUrl(null); setSelectedClip(null); }} />
+          {project ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {project.status === 'processing' || project.status === 'queued' ? <Loader2 className="animate-spin text-primary" /> : project.status === 'failed' ? <AlertCircle className="text-destructive" /> : <Sparkles className="text-primary" />}
+                  {project.status === 'completed' ? 'Cortes encontrados' : project.status === 'failed' ? 'Processamento interrompido' : 'IA processando'}
+                </CardTitle>
+                <CardDescription className="truncate">{project.fileName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.max(0, Math.min(100, project.progress))}%` }} />
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {project.status === 'completed' ? 'Análise concluída.' : project.status === 'failed' ? (project.errorMessage ?? 'Ocorreu um erro.') : `Processando... ${project.progress}%`}
+                </p>
+                {project.status === 'completed' && clips.length === 0 && (
+                  <p className="mt-4 rounded-xl bg-muted/40 p-4 text-sm">A transcrição terminou, mas a IA não encontrou cortes com tempo suficiente.</p>
+                )}
+                {loadingResults && project.status !== 'completed' && project.status !== 'failed' && (
+                  <p className="mt-4 text-sm text-muted-foreground">Atualizando o status automaticamente...</p>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="rounded-2xl border border-dashed p-8 text-center">
+              <FolderOpen className="mx-auto text-muted-foreground" size={28} />
+              <h2 className="mt-3 text-xl font-semibold">Comece seu primeiro projeto</h2>
+              <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">Escolha um vídeo e clique em “Criar cortes com IA”.</p>
+            </div>
+          )}
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_.9fr]"><CortesUpload onCreated={setProject} />{project ? <Card><CardHeader><CardTitle>Projeto criado</CardTitle><CardDescription>O arquivo foi preparado para entrar no pipeline de IA.</CardDescription></CardHeader><CardContent><div className="rounded-xl border p-4"><strong className="block truncate">{project.title}</strong><span className="text-sm text-muted-foreground">Status: {project.status} · {project.fileName}</span></div><div className="mt-4 rounded-xl bg-muted/40 p-4 text-sm"><strong>Próxima etapa</strong><p className="mt-1 text-muted-foreground">Conectar armazenamento, transcrição e análise de melhores momentos no backend.</p></div></CardContent></Card> : <div className="rounded-2xl border border-dashed p-8 text-center"><FolderOpen className="mx-auto text-muted-foreground" size={28} /><h2 className="mt-3 text-xl font-semibold">Comece seu primeiro projeto</h2><p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">Escolha um vídeo ao lado para preparar o processamento.</p></div>}</section>
+        {project?.status === 'completed' && clips.length > 0 && (
+          <section className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
+            <Card className="overflow-hidden">
+              <CardHeader>
+                <CardTitle>Pré-visualização</CardTitle>
+                <CardDescription>
+                  {selectedClip ? `${selectedClip.title} · ${formatTime(selectedClip.startSeconds)}–${formatTime(selectedClip.endSeconds)}` : 'Selecione um corte para começar.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {videoUrl ? (
+                  <video ref={videoRef} src={videoUrl} controls className="aspect-video w-full rounded-xl bg-black" />
+                ) : (
+                  <div className="flex aspect-video items-center justify-center rounded-xl bg-muted"><Loader2 className="animate-spin" /></div>
+                )}
+                <p className="mt-3 text-xs text-muted-foreground">
+                  O MVP atual gera e organiza os melhores momentos; a exportação MP4 com cortes e legendas será conectada ao editor na próxima etapa.
+                </p>
+              </CardContent>
+            </Card>
 
-        <section className="mt-8 rounded-2xl border border-dashed p-8 text-center">
-          <FolderOpen className="mx-auto text-muted-foreground" size={28} />
-          <h2 className="mt-3 text-xl font-semibold">Ainda não há projetos</h2>
-          <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">Quando o pipeline de processamento estiver conectado, seus vídeos e cortes ficarão organizados nesta área.</p>
+            <Card>
+              <CardHeader>
+                <CardTitle>Melhores cortes</CardTitle>
+                <CardDescription>{clips.length} sugestões encontradas pela IA.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {clips.map((clip, index) => (
+                  <button
+                    key={clip.id}
+                    type="button"
+                    onClick={() => startClip(clip)}
+                    className="w-full rounded-xl border p-4 text-left transition hover:bg-muted/40"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-semibold text-muted-foreground">CORTE {index + 1}</span>
+                        <strong className="mt-1 block">{clip.title}</strong>
+                      </div>
+                      <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{clip.score}/100</span>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock3 size={14} /> {formatTime(clip.startSeconds)} – {formatTime(clip.endSeconds)}
+                    </div>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        <section className="mt-8 grid gap-4 md:grid-cols-3">
+          <Card><CardHeader><CardDescription>Projetos</CardDescription><CardTitle className="text-3xl">{project ? 1 : 0}</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Projetos desta sessão.</p></CardContent></Card>
+          <Card><CardHeader><CardDescription>Cortes gerados</CardDescription><CardTitle className="text-3xl">{clips.length}</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Sugestões encontradas pela IA.</p></CardContent></Card>
+          <Card><CardHeader><CardDescription>Pipeline</CardDescription><CardTitle className="text-3xl">IA</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Upload → transcrição → seleção.</p></CardContent></Card>
         </section>
       </main>
     </div>
