@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 
-const input = z.object({ projectId: z.string().uuid(), clipId: z.string().uuid() });
+const input = z.object({ projectId: z.string().uuid(), clipId: z.string().uuid(), captions: z.boolean().default(true), captionStyle: z.enum(['highlight', 'karaoke', 'pop', 'fade', 'slide', 'bounce', 'typewriter', 'none']).default('highlight') });
 
 export const renderCortesClip = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
