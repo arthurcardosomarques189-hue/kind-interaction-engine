@@ -13,3 +13,5 @@
 - Enforce credit deductions and admin mutations transactionally in database functions; client state is never authorization.
 - Public home contains only a locked administrative overview; private data is fetched only after authentication and server owner validation.
 - Processing and payment integrations are not simulated; operational metrics read real stored events and payments.
+- Map database clip fields to the browser clip model explicitly; database snake_case must not be cast into camelCase playback values.
+- Reserve processing credits per project in an authenticated database transaction and keep refunds service-only and idempotent; this prevents double charges and caller-created credits.

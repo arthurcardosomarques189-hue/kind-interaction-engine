@@ -53,14 +53,15 @@ export function CortesHistory() {
         supabase.from('clips').select('id,title,start_seconds,end_seconds,score').order('created_at', { ascending: false }).limit(200),
       ]);
       if (cancelled) return;
-      setProjects((projectRows ?? []) as ProjectRow[]);
-      setExports((exportRows ?? []) as ExportRow[]);
-      setClips(Object.fromEntries(((clipRows ?? []) as ClipRow[]).map((clip) => [clip.id, clip])));
+      setProjects(projectRows ?? []);
+      setExports(exportRows ?? []);
+      setClips(Object.fromEntries((clipRows ?? []).map((clip) => [clip.id, clip])));
       setLoading(false);
 
-      const completed = (exportRows ?? []).filter((item) => item.status === 'completed' && item.output_path) as ExportRow[];
+      const completed = (exportRows ?? []).filter((item) => item.status === 'completed' && item.output_path);
       const signed = await Promise.all(completed.map(async (item) => {
-        const { data } = await supabase.storage.from('cortes-videos').createSignedUrl(item.output_path!, 60 * 60);
+        if (!item.output_path) return [item.id, ''] as const;
+        const { data } = await supabase.storage.from('cortes-videos').createSignedUrl(item.output_path, 60 * 60);
         return [item.id, data?.signedUrl ?? ''] as const;
       }));
       if (!cancelled) setUrls(Object.fromEntries(signed.filter(([, url]) => url)));
