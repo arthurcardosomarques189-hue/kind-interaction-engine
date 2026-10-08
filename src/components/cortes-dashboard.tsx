@@ -3,7 +3,7 @@ import { CortesUpload } from '@/components/cortes-upload';
 import { getCortesExportStatus, renderCortesClip } from '@/lib/cortes-export.functions';
 import type { CortesClip, CortesProject } from '@/lib/cortes-project';
 import { Link } from '@tanstack/react-router';
-import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle } from 'lucide-react';
+import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
