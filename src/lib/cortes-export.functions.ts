@@ -22,47 +22,11 @@ export const getCortesExportStatus = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ exportId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    const { data: exportRow, error } = await context.supabase
-      .from('exports')
-      .select('id,status,render_id,output_url,error_message,updated_at')
-      .eq('id', data.exportId)
-      .eq('user_id', context.userId)
-      .single();
+    const { data: result, error } = await context.supabase.functions.invoke('check-cortes-export', {
+      body: { exportId: data.exportId },
+    });
 
-    if (error || !exportRow) throw new Error('Exportação não encontrada.');
-
-    if (exportRow.status === 'rendering' && exportRow.render_id) {
-      const shotstackKey = process.env['SHOTSTACK_API_KEY'];
-      if (shotstackKey) {
-        const response = await fetch(`https://api.shotstack.io/edit/v1/render/${exportRow.render_id}`, {
-          headers: { Accept: 'application/json', 'x-api-key': shotstackKey },
-        });
-        const payload = await response.json();
-        const renderStatus = payload?.response?.status;
-        const outputUrl = payload?.response?.url;
-
-        if (renderStatus === 'done' && outputUrl) {
-          await context.supabase
-            .from('exports')
-            .update({ status: 'completed', output_url: outputUrl, updated_at: new Date().toISOString() })
-            .eq('id', exportRow.id)
-            .eq('user_id', context.userId);
-          return { ...exportRow, status: 'completed', output_url: outputUrl };
-        }
-
-        if (renderStatus === 'failed') {
-          const message = payload?.response?.error ?? 'A renderização falhou.';
-          await context.supabase
-            .from('exports')
-            .update({ status: 'failed', error_message: message, updated_at: new Date().toISOString() })
-            .eq('id', exportRow.id)
-            .eq('user_id', context.userId);
-          return { ...exportRow, status: 'failed', error_message: message };
-        }
-
-        return { ...exportRow, status: renderStatus ?? 'rendering' };
-      }
-    }
-
-    return exportRow;
+    if (error) throw new Error(error.message || 'Não foi possível consultar a exportação.');
+    if (result?.error) throw new Error(result.error);
+    return result;
   });
