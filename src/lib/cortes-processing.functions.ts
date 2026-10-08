@@ -18,6 +18,16 @@ export const queueCortesProcessing = createServerFn({ method: 'POST' })
     if (error || !project) throw new Error('Projeto não encontrado.');
     if (!project.video_path) throw new Error('Este projeto ainda não possui um vídeo.');
 
+    // Reserve credits before starting the expensive AI pipeline.
+    // The database function is authoritative and bypasses the charge only for the owner admin.
+    const { data: creditsReserved, error: creditsError } = await context.supabase.rpc('reserve_processing_credits', {
+      target: context.userId,
+      amount: 5,
+    });
+
+    if (creditsError) throw new Error('Não foi possível validar seus créditos.');
+    if (!creditsReserved) throw new Error('Você não possui créditos suficientes para processar este vídeo.');
+
     const { error: updateError } = await context.supabase
       .from('projects')
       .update({ status: 'queued', progress: 15, error_message: null })
