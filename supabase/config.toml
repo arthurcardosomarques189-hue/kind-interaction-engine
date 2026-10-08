@@ -14,3 +14,18 @@ verify_jwt = true
 
 [functions.generate-clip-content]
 verify_jwt = true
+
+[functions.generate-media]
+verify_jwt = true
+
+[functions.dubbing-cortes]
+verify_jwt = true
+
+[functions.publish-cortes]
+verify_jwt = true
+
+[functions.create-mp-checkout]
+verify_jwt = true
+
+[functions.mercado-pago-webhook]
+verify_jwt = false
