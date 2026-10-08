@@ -16,6 +16,37 @@ const features = [
   { icon: Play, title: 'Pronto para vertical', description: 'A estrutura já fica preparada para a próxima etapa de edição 9:16.' },
 ];
 
+
+
+const suiteModules = [
+  { icon: Scissors, title: 'Cortes com IA', description: 'Encontre os melhores momentos e gere cortes verticais.', status: 'Disponível', action: 'novo-projeto' },
+  { icon: Play, title: 'Editor vertical', description: 'Pré-visualize, escolha legendas e exporte em 9:16.', status: 'Disponível', action: 'editor-vertical' },
+  { icon: Sparkles, title: 'Títulos e ganchos com IA', description: 'Estrutura para transformar cada corte em conteúdo pronto para publicar.', status: 'Próxima etapa' },
+  { icon: FolderOpen, title: 'Biblioteca', description: 'Organize projetos, cortes e exports em um só lugar.', status: 'Disponível', href: '/projects' },
+  { icon: Zap, title: 'Vídeo e imagem com IA', description: 'Área preparada para conectar provedores de geração por IA.', status: 'Próxima etapa' },
+  { icon: ArrowRight, title: 'Publicação e analytics', description: 'Agendamento, contas sociais e métricas de desempenho.', status: 'Próxima etapa' },
+];
+
+function CreativeSuite() {
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  return (
+    <section className="mt-8">
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Creative Suite</p><h2 className="mt-1 text-2xl font-bold tracking-tight">Tudo para criar conteúdo com IA</h2><p className="mt-1 text-sm text-muted-foreground">Os módulos entram no CORTES AI por etapas, sem funcionalidades falsas.</p></div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {suiteModules.map((module) => {
+          const Icon = module.icon;
+          const content = <div className="group h-full rounded-2xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-sm"><div className="flex items-start justify-between gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon size={20} /></span><span className="rounded-full border px-2 py-1 text-[10px] font-semibold text-muted-foreground">{module.status}</span></div><h3 className="mt-4 font-semibold">{module.title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{module.description}</p>{module.action && <span className="mt-4 inline-flex text-xs font-semibold text-primary">Abrir módulo →</span>}{module.href && <span className="mt-4 inline-flex text-xs font-semibold text-primary">Abrir biblioteca →</span>}</div>;
+          if (module.href) return <Link key={module.title} to={module.href}>{content}</Link>;
+          if (module.action) return <button key={module.title} type="button" className="text-left" onClick={() => scrollTo(module.action!)}>{content}</button>;
+          return <div key={module.title}>{content}</div>;
+        })}
+      </div>
+    </section>
+  );
+}
+
 function formatTime(seconds: number) {
   const total = Math.max(0, Math.round(seconds));
   const minutes = Math.floor(total / 60);
@@ -211,6 +242,8 @@ export function CortesDashboard() {
           ))}
         </section>
 
+        <CreativeSuite />
+
         <section id="novo-projeto" className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
           <CortesUpload onCreated={(created) => { setProject(created); setClips([]); setVideoUrl(null); setSelectedClip(null); }} />
           {project ? (
@@ -287,7 +320,7 @@ export function CortesDashboard() {
         )}
 
         {project?.status === 'completed' && clips.length > 0 && (
-          <section className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
+          <section id="editor-vertical" className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
             <Card className="overflow-hidden">
               <CardHeader>
                 <CardTitle>Pré-visualização</CardTitle>
