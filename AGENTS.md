@@ -15,3 +15,6 @@
 - Processing and payment integrations are not simulated; operational metrics read real stored events and payments.
 - Map database clip fields to the browser clip model explicitly; database snake_case must not be cast into camelCase playback values.
 - Reserve processing credits per project in an authenticated database transaction and keep refunds service-only and idempotent; this prevents double charges and caller-created credits.
+- Validate file and YouTube inputs with the shared browser-safe video input module; identical validation prevents invalid sources from creating projects.
+- Check required processing configuration before reserving credits and preserve uploaded media when processing is unavailable; unavailable providers must not charge users or discard their videos.
+- Store video files in the private project-scoped bucket with authenticated storage policies; uploads and playback must never rely on public access.

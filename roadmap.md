@@ -3,6 +3,10 @@
 ## Current repair
 - [x] Resolve preview compilation errors without weakening owner permissions.
 
+## Current request
+- [ ] Apply LED-green accents.
+- [ ] Verify and repair file upload and YouTube import with real processing.
+
 ## Implemented foundation
 - AI cuts, transcription, clip scoring, upload and vertical export.
 - YouTube ingestion contract and private project storage.
