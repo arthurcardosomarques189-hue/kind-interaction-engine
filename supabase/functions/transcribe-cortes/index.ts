@@ -238,8 +238,9 @@ Deno.serve(async (req) => {
         // The processing reservation was made before this async job started.
         // Refund it when the background job fails.
         if (failedProject?.user_id) {
-          await admin.rpc("refund_credits", {
+          await admin.rpc("refund_processing_for_project", {
             target: failedProject.user_id,
+            project_id: body.projectId,
             amount: 5,
             reason: "processing_failed",
           });
