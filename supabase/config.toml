@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.render-cortes]
 verify_jwt = true
+
+[functions.check-cortes-export]
+verify_jwt = true
