@@ -89,7 +89,7 @@ export function CortesDashboard() {
     const poll = async () => {
       const { data, error } = await supabase
         .from('projects')
-        .select('id,title,status,progress,error_message,video_path,video_name,video_size,created_at')
+        .select('id,title,status,progress,error_message,video_path,video_name,video_size,source_type,source_url,created_at')
         .eq('id', project.id)
         .single();
 
@@ -105,6 +105,8 @@ export function CortesDashboard() {
         createdAt: data.created_at,
         videoPath: data.video_path,
         errorMessage: data.error_message,
+        sourceType: data.source_type as CortesProject['sourceType'],
+        sourceUrl: data.source_url,
       };
       setProject(next);
 
@@ -216,7 +218,7 @@ export function CortesDashboard() {
             </span>
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">Transforme vídeos longos em cortes que prendem atenção.</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Envie seu vídeo, deixe a IA encontrar os melhores momentos e visualize os cortes sugeridos.
+              Envie seu vídeo ou cole um link do YouTube, deixe a IA encontrar os melhores momentos e visualize os cortes sugeridos.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button size="lg" onClick={() => document.getElementById('novo-projeto')?.scrollIntoView({ behavior: 'smooth' })}>
