@@ -83,6 +83,14 @@ Deno.serve(async (req) => {
         error_message: message,
         updated_at: new Date().toISOString(),
       }).eq('id', exportId).eq('user_id', userId).select('*').single();
+
+      // Return the export credit when the provider reports a failed render.
+      await admin.rpc('refund_credits', {
+        target: userId,
+        amount: 1,
+        reason: 'export_render_failed_async',
+      });
+
       return json(updated ?? { ...exportRow, status: 'failed', error_message: message });
     }
 
