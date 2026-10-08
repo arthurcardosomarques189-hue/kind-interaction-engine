@@ -1,1 +1,10 @@
-project_id = "amlreiwuqspfqcysgown"
+project_id = "mgaqcyztnjftwtribkfd"
+
+[functions.transcribe-cortes]
+verify_jwt = true
+
+[functions.render-cortes]
+verify_jwt = true
+
+[functions.check-cortes-export]
+verify_jwt = true

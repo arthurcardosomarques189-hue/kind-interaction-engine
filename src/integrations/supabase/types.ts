@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      clips: {
+        Row: {
+          created_at: string
+          end_seconds: number
+          id: string
+          project_id: string
+          score: number
+          start_seconds: number
+          title: string
+          user_id: string
+          video_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          end_seconds: number
+          id?: string
+          project_id: string
+          score?: number
+          start_seconds: number
+          title: string
+          user_id: string
+          video_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          end_seconds?: number
+          id?: string
+          project_id?: string
+          score?: number
+          start_seconds?: number
+          title?: string
+          user_id?: string
+          video_path?: string | null
+        }
+        Relationships: []
+      }
+      exports: {
+        Row: {
+          id: string
+          project_id: string
+          clip_id: string
+          user_id: string
+          provider: string
+          render_id: string | null
+          output_path: string | null
+          status: string
+          output_url: string | null
+          error_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          clip_id: string
+          user_id: string
+          provider?: string
+          render_id?: string | null
+          output_path?: string | null
+          status?: string
+          output_url?: string | null
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          clip_id?: string
+          user_id?: string
+          provider?: string
+          render_id?: string | null
+          output_path?: string | null
+          status?: string
+          output_url?: string | null
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       credit_ledger: {
         Row: {
           actor_id: string | null
@@ -48,6 +129,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      transcripts: {
+        Row: {
+          created_at: string
+          id: string
+          language: string | null
+          project_id: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          project_id: string
+          text?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          project_id?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       payments: {
         Row: {
@@ -121,29 +229,44 @@ export type Database = {
         Row: {
           created_at: string
           cuts: number
+          error_message: string | null
           id: string
           minutes: number
+          progress: number
           status: string
           title: string
           user_id: string
+          video_name: string | null
+          video_path: string | null
+          video_size: number | null
         }
         Insert: {
           created_at?: string
           cuts?: number
+          error_message?: string | null
           id?: string
           minutes?: number
+          progress?: number
           status?: string
           title: string
           user_id: string
+          video_name?: string | null
+          video_path?: string | null
+          video_size?: number | null
         }
         Update: {
           created_at?: string
           cuts?: number
+          error_message?: string | null
           id?: string
           minutes?: number
+          progress?: number
           status?: string
           title?: string
           user_id?: string
+          video_name?: string | null
+          video_path?: string | null
+          video_size?: number | null
         }
         Relationships: [
           {
