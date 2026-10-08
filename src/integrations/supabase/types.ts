@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      clips: {
+        Row: {
+          created_at: string
+          end_seconds: number
+          id: string
+          project_id: string
+          score: number
+          start_seconds: number
+          title: string
+          user_id: string
+          video_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          end_seconds: number
+          id?: string
+          project_id: string
+          score?: number
+          start_seconds: number
+          title: string
+          user_id: string
+          video_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          end_seconds?: number
+          id?: string
+          project_id?: string
+          score?: number
+          start_seconds?: number
+          title?: string
+          user_id?: string
+          video_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clips_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clips_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_ledger: {
         Row: {
           actor_id: string | null
@@ -21,6 +72,7 @@ export type Database = {
           created_at: string
           id: string
           kind: string
+          project_id: string | null
           user_id: string
         }
         Insert: {
@@ -29,6 +81,7 @@ export type Database = {
           created_at?: string
           id?: string
           kind: string
+          project_id?: string | null
           user_id: string
         }
         Update: {
@@ -37,11 +90,86 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: string
+          project_id?: string | null
           user_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "credit_ledger_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "credit_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exports: {
+        Row: {
+          clip_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          output_path: string | null
+          output_url: string | null
+          project_id: string
+          provider: string
+          render_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clip_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          output_path?: string | null
+          output_url?: string | null
+          project_id: string
+          provider?: string
+          render_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clip_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          output_path?: string | null
+          output_url?: string | null
+          project_id?: string
+          provider?: string
+          render_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exports_clip_id_fkey"
+            columns: ["clip_id"]
+            isOneToOne: false
+            referencedRelation: "clips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exports_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -121,29 +249,50 @@ export type Database = {
         Row: {
           created_at: string
           cuts: number
+          error_message: string | null
           id: string
           minutes: number
+          progress: number
+          source_type: string
+          source_url: string | null
           status: string
           title: string
           user_id: string
+          video_name: string | null
+          video_path: string | null
+          video_size: number | null
         }
         Insert: {
           created_at?: string
           cuts?: number
+          error_message?: string | null
           id?: string
           minutes?: number
+          progress?: number
+          source_type?: string
+          source_url?: string | null
           status?: string
           title: string
           user_id: string
+          video_name?: string | null
+          video_path?: string | null
+          video_size?: number | null
         }
         Update: {
           created_at?: string
           cuts?: number
+          error_message?: string | null
           id?: string
           minutes?: number
+          progress?: number
+          source_type?: string
+          source_url?: string | null
           status?: string
           title?: string
           user_id?: string
+          video_name?: string | null
+          video_path?: string | null
+          video_size?: number | null
         }
         Relationships: [
           {
@@ -249,8 +398,21 @@ export type Database = {
       }
       assign_initial_owner: { Args: { target: string }; Returns: undefined }
       is_owner: { Args: never; Returns: boolean }
+      refund_processing_for_project: {
+        Args: {
+          amount: number
+          project_id: string
+          reason?: string
+          target: string
+        }
+        Returns: boolean
+      }
       reserve_processing_credits: {
         Args: { amount: number; target: string }
+        Returns: boolean
+      }
+      reserve_project_processing: {
+        Args: { project_id: string }
         Returns: boolean
       }
     }
