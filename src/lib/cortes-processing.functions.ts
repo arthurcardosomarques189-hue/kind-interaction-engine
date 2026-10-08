@@ -34,7 +34,10 @@ export const queueCortesProcessing = createServerFn({ method: 'POST' })
       .eq('id', project.id)
       .eq('user_id', context.userId);
 
-    if (updateError) throw new Error('Não foi possível colocar o projeto na fila.');
+    if (updateError) {
+      await context.supabase.rpc('refund_credits', { target: context.userId, amount: 5, reason: 'processing_queue_failed' });
+      throw new Error('Não foi possível colocar o projeto na fila.');
+    }
 
     const { data: functionResult, error: functionError } =
       await context.supabase.functions.invoke('transcribe-cortes', {
@@ -47,6 +50,11 @@ export const queueCortesProcessing = createServerFn({ method: 'POST' })
         .update({ status: 'failed', error_message: functionError.message })
         .eq('id', project.id)
         .eq('user_id', context.userId);
+      await context.supabase.rpc('refund_credits', {
+        target: context.userId,
+        amount: 5,
+        reason: 'processing_start_failed',
+      });
 
       throw new Error('Não foi possível iniciar o motor de transcrição.');
     }
