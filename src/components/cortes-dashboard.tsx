@@ -25,7 +25,7 @@ const suiteModules = [
   { icon: Play, title: 'Editor vertical', description: 'Pré-visualize, escolha legendas e exporte em 9:16.', status: 'Disponível', action: 'editor-vertical' },
   { icon: Sparkles, title: 'Títulos e ganchos com IA', description: 'Estrutura para transformar cada corte em conteúdo pronto para publicar.', status: 'Próxima etapa' },
   { icon: FolderOpen, title: 'Biblioteca', description: 'Organize projetos, cortes e exports em um só lugar.', status: 'Disponível', href: '/projects' },
-  { icon: Zap, title: 'Vídeo e imagem com IA', description: 'Área preparada para conectar provedores de geração por IA.', status: 'Próxima etapa' },
+  { icon: Zap, title: 'Vídeo e imagem com IA', description: 'Gere vídeos com Runway Gen-4.5 e imagens com IA.', status: 'Disponível', action: 'video-ia' },
   { icon: ArrowRight, title: 'Publicação e analytics', description: 'Agendamento, contas sociais e métricas de desempenho.', status: 'Próxima etapa' },
 ];
 
