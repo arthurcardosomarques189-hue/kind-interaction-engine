@@ -2,3 +2,6 @@ project_id = "mgaqcyztnjftwtribkfd"
 
 [functions.transcribe-cortes]
 verify_jwt = true
+
+[functions.render-cortes]
+verify_jwt = true
