@@ -14,6 +14,7 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
   const [busy, setBusy] = useState(false);
   const [uploaded, setUploaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const MAX_VIDEO_SIZE = 24 * 1024 * 1024;
 
   function selectFile(next: File | undefined) {
     if (!next) return;
@@ -21,6 +22,10 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
     setUploaded(false);
     if (!next.type.startsWith('video/')) {
       setError('Escolha um arquivo de vídeo.');
+      return;
+    }
+    if (next.size > MAX_VIDEO_SIZE) {
+      setError('O vídeo precisa ter no máximo 24 MB para este processamento.');
       return;
     }
     setFile(next);
