@@ -74,3 +74,37 @@ using (
   bucket_id = 'cortes-videos'
   and (storage.foldername(name))[1] = auth.uid()::text
 );
+
+
+alter table public.projects enable row level security;
+
+drop policy if exists "Users can read own projects" on public.projects;
+create policy "Users can read own projects"
+on public.projects for select
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can create own projects" on public.projects;
+create policy "Users can create own projects"
+on public.projects for insert
+to authenticated
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own projects" on public.projects;
+create policy "Users can update own projects"
+on public.projects for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own projects" on public.projects;
+create policy "Users can delete own projects"
+on public.projects for delete
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can read own clip projects" on public.clips;
+create policy "Users can read own clip projects"
+on public.clips for select
+to authenticated
+using (auth.uid() = user_id);
