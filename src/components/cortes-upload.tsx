@@ -8,16 +8,7 @@ import { createYouTubeCortesProject } from '@/lib/cortes-youtube.functions';
 import { supabase } from '@/integrations/supabase/client';
 import { uploadCortesVideoResumable } from '@/lib/cortes-large-upload';
 import type { CortesProject } from '@/lib/cortes-project';
-
-function isYouTubeUrl(value: string) {
-  try {
-    const url = new URL(value);
-    const host = url.hostname.toLowerCase().replace(/^www\./, '');
-    return host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtu.be';
-  } catch {
-    return false;
-  }
-}
+import { normalizeYouTubeUrl, videoFileError } from '@/lib/cortes-video-input';
 
 export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,18 +20,15 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploaded, setUploaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const MAX_VIDEO_SIZE = 500 * 1024 * 1024;
 
   function selectFile(next: File | undefined) {
     if (!next) return;
     setError(null);
     setUploaded(false);
-    if (!next.type.startsWith('video/')) {
-      setError('Escolha um arquivo de vídeo.');
-      return;
-    }
-    if (next.size > MAX_VIDEO_SIZE) {
-      setError('O vídeo precisa ter no máximo 500 MB. Vídeos maiores usam upload em partes e processamento assíncrono.');
+    const validationError = videoFileError(next);
+    if (validationError) {
+      setFile(null);
+      setError(validationError);
       return;
     }
     setFile(next);
@@ -62,7 +50,7 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
 
       const { error: updateError } = await supabase.from('projects').update({
         video_path: path, video_name: file.name, video_size: file.size, source_type: 'upload',
-        status: 'queued', progress: 10,
+        status: 'pending', progress: 10,
       }).eq('id', project.id);
       if (updateError) {
         await supabase.storage.from('cortes-videos').remove([path]);
@@ -71,7 +59,7 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
 
       const created: CortesProject = {
         id: project.id, title: project.title, fileName: file.name, fileSize: file.size,
-        status: 'queued', progress: 15, createdAt: project.created_at, videoPath: path,
+        status: 'pending', progress: 10, createdAt: project.created_at, videoPath: path,
         errorMessage: null, sourceType: 'upload',
       };
       setUploaded(true);
@@ -82,7 +70,6 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
         await queueCortesProcessing({ data: { projectId: project.id } });
       } catch (processingError) {
         const message = processingError instanceof Error ? processingError.message : 'Não foi possível iniciar o processamento.';
-        await supabase.from('projects').update({ status: 'failed', error_message: message }).eq('id', project.id);
         throw new Error(message);
       }
     } catch (cause) {
@@ -93,8 +80,8 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
   }
 
   async function createProjectFromYouTube() {
-    const value = youtubeUrl.trim();
-    if (!isYouTubeUrl(value)) {
+    const value = normalizeYouTubeUrl(youtubeUrl);
+    if (!value) {
       setError('Cole um link válido do YouTube.');
       return;
     }
@@ -133,12 +120,12 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
       </CardHeader>
       <CardContent>
         <div className="mb-5 grid grid-cols-2 rounded-xl border p-1">
-          <button type="button" onClick={() => { setMode('upload'); setError(null); }} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${mode === 'upload' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
+          <Button type="button" disabled={busy} aria-pressed={mode === 'upload'} variant={mode === 'upload' ? 'default' : 'ghost'} onClick={() => { setMode('upload'); setError(null); setUploaded(false); }}>
             <Upload className="mr-2 inline" size={16} /> Arquivo
-          </button>
-          <button type="button" onClick={() => { setMode('youtube'); setError(null); }} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${mode === 'youtube' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
+          </Button>
+          <Button type="button" disabled={busy} aria-pressed={mode === 'youtube'} variant={mode === 'youtube' ? 'default' : 'ghost'} onClick={() => { setMode('youtube'); setError(null); setUploaded(false); }}>
             <Youtube className="mr-2 inline" size={16} /> YouTube
-          </button>
+          </Button>
         </div>
 
         {mode === 'youtube' ? (
@@ -151,6 +138,7 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
               placeholder="https://www.youtube.com/watch?v=..."
               className="mt-2 w-full rounded-xl border bg-background px-4 py-3 text-sm outline-none ring-primary focus:ring-2"
               inputMode="url"
+              disabled={busy}
             />
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
               Use somente vídeos que você tenha permissão para processar. O CORTES AI não deve burlar DRM, paywalls ou restrições de acesso.
@@ -161,9 +149,11 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
           </div>
         ) : (
           <>
-            <button
+            <Button
               type="button"
-              className={`flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed p-10 text-center transition ${dragging ? 'border-primary bg-primary/5' : 'hover:bg-muted/40'}`}
+              variant="outline"
+              disabled={busy}
+              className={`h-auto w-full flex-col whitespace-normal rounded-lg border-2 border-dashed p-6 text-center sm:p-10 ${dragging ? 'border-primary bg-primary/5' : 'hover:bg-muted/40'}`}
               onClick={() => inputRef.current?.click()}
               onDragOver={e => { e.preventDefault(); setDragging(true); }}
               onDragLeave={() => setDragging(false)}
@@ -172,8 +162,8 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
               <Upload className="mb-3 text-primary" size={30} />
               <strong>Arraste seu vídeo aqui</strong>
               <span className="mt-1 text-sm text-muted-foreground">ou clique para escolher um arquivo de vídeo (até 500 MB)</span>
-              <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={e => selectFile(e.target.files?.[0])} />
-            </button>
+            </Button>
+            <input ref={inputRef} type="file" accept="video/*,.mp4,.mov,.webm,.m4v,.avi,.mkv" disabled={busy} className="hidden" onChange={e => { selectFile(e.target.files?.[0]); e.target.value = ''; }} />
 
             {file && (
               <div className="mt-4 flex items-center justify-between rounded-xl border p-4">
@@ -184,7 +174,7 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
                     <span className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setFile(null)} aria-label="Remover vídeo"><X /></Button>
+                <Button variant="ghost" size="icon" disabled={busy} onClick={() => setFile(null)} aria-label="Remover vídeo"><X /></Button>
               </div>
             )}
 
@@ -206,11 +196,11 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
         )}
 
         {uploaded && (
-          <p className="mt-3 flex items-center gap-2 text-sm text-green-600">
-            <CheckCircle2 size={16} /> Projeto criado. A IA vai analisar os melhores momentos.
+          <p className="mt-3 flex items-center gap-2 text-sm text-accent-foreground">
+            <CheckCircle2 size={16} /> Vídeo salvo na sua biblioteca.
           </p>
         )}
-        {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+        {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
       </CardContent>
     </Card>
   );

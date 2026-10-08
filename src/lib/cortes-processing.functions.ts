@@ -18,6 +18,10 @@ export const queueCortesProcessing = createServerFn({ method: 'POST' })
     if (error || !project) throw new Error('Projeto não encontrado.');
     if (!project.video_path) throw new Error('Este projeto ainda não possui um vídeo.');
 
+    if (!process.env['ASSEMBLYAI_API_KEY']) {
+      throw new Error('Seu vídeo foi salvo. A geração de cortes aguarda a conexão do serviço de transcrição; nenhum crédito foi cobrado.');
+    }
+
     const { data: creditsReserved, error: creditsError } = await context.supabase.rpc('reserve_project_processing', {
       project_id: project.id,
     });
