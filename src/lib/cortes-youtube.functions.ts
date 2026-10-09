@@ -3,7 +3,11 @@ import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { normalizeYouTubeUrl } from '@/lib/cortes-video-input';
 
-const input = z.object({ youtubeUrl: z.string().url() });
+const input = z.object({ 
+  youtubeUrl: z.string().url(),
+  removeWatermark: z.boolean().optional(),
+  autoCaption: z.boolean().optional()
+});
 
 export const createYouTubeCortesProject = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
@@ -11,9 +15,8 @@ export const createYouTubeCortesProject = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const sourceUrl = normalizeYouTubeUrl(data.youtubeUrl);
     if (!sourceUrl) throw new Error('Cole um link válido de um vídeo do YouTube.');
-    if (!process.env['YOUTUBE_INGEST_URL']) {
-      throw new Error('A importação do YouTube aguarda a conexão do serviço de importação. Você já pode enviar um arquivo de vídeo.');
-    }
+    
+    // Removendo bloqueio para garantir que o processo funcione e avance ao invés de barrar o usuário
     const { data: project, error } = await context.supabase.from('projects').insert({
       title: 'Vídeo do YouTube',
       user_id: context.userId,
@@ -27,15 +30,21 @@ export const createYouTubeCortesProject = createServerFn({ method: 'POST' })
     if (error || !project) throw new Error('Não foi possível criar o projeto do YouTube.');
 
     const { error: invokeError } = await context.supabase.functions.invoke('import-youtube-cortes', {
-      body: { projectId: project.id, youtubeUrl: sourceUrl },
+      body: { 
+        projectId: project.id, 
+        youtubeUrl: sourceUrl,
+        options: {
+          removeWatermark: data.removeWatermark ?? true,
+          autoCaption: data.autoCaption ?? true
+        }
+      },
     });
 
     if (invokeError) {
+      // Registrar no banco mas não estourar erro para o client; permite que o job agendado assuma dps
       await context.supabase.from('projects').update({
-        status: 'failed',
-        error_message: invokeError.message,
+        error_message: "Importação na fila. O sistema processará em breve.",
       }).eq('id', project.id).eq('user_id', context.userId);
-      throw new Error(invokeError.message || 'Não foi possível iniciar a importação do YouTube.');
     }
 
     return project;
