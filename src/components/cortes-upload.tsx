@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { CheckCircle2, FileVideo, Loader2, Settings, Sparkles, Upload, X, Youtube } from "lucide-react";
+import { CheckCircle2, File, FileVideo, Loader2, Settings, Sparkles, Upload, X, Youtube } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -48,7 +48,8 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
     try {
       const project = await createCortesProject({ data: { title: file.name.replace(/\.[^/.]+$/, '') } });
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const path = project.user_id + '/' + project.id + '/original-' + crypto.randomUUID() + '-' + safeName;
+      const userId = project.user_id || 'user';
+      const path = userId + '/' + project.id + '/original-' + crypto.randomUUID() + '-' + safeName;
 
       setUploadProgress(1);
       await uploadCortesVideoResumable(path, file, setUploadProgress);

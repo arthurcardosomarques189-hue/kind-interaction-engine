@@ -239,4 +239,15 @@ h3 { font-size:14px; font-weight:700; margin:0; }
 @media(max-width:1100px) { .app-layout { grid-template-columns:205px minmax(0,1fr); }.app-body main { padding:28px 24px; }.app-topbar { padding:0 24px; }.metric-card { padding:14px; }.metric-top { font-size:10px; }.page-heading { align-items:flex-start; }.page-heading>div:last-child { flex-wrap:wrap; justify-content:flex-end; }.brand { font-size:20px; } }
 @media(max-width:760px) { .app-layout { grid-template-columns:1fr; }.app-sidebar { display:none; }.app-topbar { height:62px; padding:0 16px; }.app-topbar .live-label { display:none; }.app-body main { padding:24px 16px; }.page-heading { flex-direction:column; gap:18px; }.page-heading>div:last-child { justify-content:flex-start; }.metrics-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.analytics-grid { grid-template-columns:1fr; }.cost-section { border-left:0; padding-left:0; border-top:1px solid var(--border); padding-top:22px; }.studio-banner { height:205px; }.studio-banner>div { padding:25px 20px; }.studio-banner h2 { font-size:28px; }.studio-banner p { max-width:240px; }.access-notice { flex-wrap:wrap; }.access-notice>div { flex:1; min-width:200px; }.access-notice a { margin-left:30px; }.users-section>.section-title { flex-wrap:wrap; }.search-input { width:100%; }.search-input input { width:100%; }.app-body footer { padding:20px 16px; flex-wrap:wrap; }.app-body footer span:nth-child(2) { display:none; }.auth-page { padding:40px 24px; background:var(--background); }.auth-page>img { opacity:.2; }.auth-inner h1 { font-size:32px; } }
 @media(prefers-reduced-motion:reduce) { * { animation:none!important; transition:none!important; } }
+
+/* Ocultar marca d'água da Lovable */
+#lovable-badge-wrap,
+#lovable-badge,
+.lovable-badge,
+a[href*="lovable.dev/projects"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
 ===
