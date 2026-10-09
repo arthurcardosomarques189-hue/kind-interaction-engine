@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { CheckCircle2, File, FileVideo, Loader2, Settings, Sparkles, Upload, X, Youtube } from "lucide-react";
+import { CheckCircle2, FileVideo, Loader2, Settings, Sparkles, Upload, X, Youtube } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -23,7 +23,6 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
   const [uploaded, setUploaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Opções Profissionais
   const [removeWatermark, setRemoveWatermark] = useState(true);
   const [autoCaption, setAutoCaption] = useState(true);
 
@@ -183,9 +182,14 @@ export function CortesUpload({ onCreated }: { onCreated: (project: CortesProject
               inputMode="url"
               disabled={busy}
             />
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              Use somente vídeos públicos. O CORTES AI não processa vídeos privados, restritos ou protegidos por paywall.
-            </p>
+            <div className="mt-2 flex items-start justify-between gap-4">
+              <p className="text-xs leading-5 text-muted-foreground">
+                Use somente vídeos públicos. O CORTES AI não processa vídeos privados, restritos ou protegidos por paywall.
+              </p>
+              <Button type="button" variant="secondary" size="sm" className="shrink-0" onClick={() => setYoutubeUrl('https://www.youtube.com/watch?v=jNQXAC9IVRw')}>
+                Usar vídeo curto de teste (18s)
+              </Button>
+            </div>
 
             {optionsPanel}
 
