@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-09T03:53:59.070227+00:00",
+  "generated_at": "2026-10-09T03:59:52.313692+00:00",
   "files": [
     {
       "path": "roadmap.md",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/styles.css",
-      "bytes": 17304
+      "bytes": 17554
     },
     {
       "path": "src/server.ts",
@@ -167,7 +167,7 @@
     },
     {
       "path": "src/components/cortes-upload.tsx",
-      "bytes": 12918
+      "bytes": 12963
     },
     {
       "path": "src/components/admin-workspace.tsx",
@@ -295,7 +295,7 @@
     },
     {
       "path": "src/integrations/supabase/client.ts",
-      "bytes": 3569
+      "bytes": 3751
     },
     {
       "path": "src/integrations/supabase/auth-attacher.ts",
