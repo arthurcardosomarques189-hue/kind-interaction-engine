@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-09T03:43:30.451612+00:00",
+  "generated_at": "2026-10-09T03:51:01.251529+00:00",
   "files": [
     {
       "path": "roadmap.md",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/styles.css",
-      "bytes": 17077
+      "bytes": 17304
     },
     {
       "path": "src/server.ts",
@@ -167,7 +167,7 @@
     },
     {
       "path": "src/components/cortes-upload.tsx",
-      "bytes": 9398
+      "bytes": 12620
     },
     {
       "path": "src/components/admin-workspace.tsx",
@@ -195,7 +195,7 @@
     },
     {
       "path": "src/lib/cortes-youtube.functions.ts",
-      "bytes": 1717
+      "bytes": 1884
     },
     {
       "path": "src/lib/cortes-large-upload.ts",
@@ -734,6 +734,14 @@
     {
       "source": "src/components/cortes-upload.tsx",
       "target": "@/components/ui/card"
+    },
+    {
+      "source": "src/components/cortes-upload.tsx",
+      "target": "@/components/ui/switch"
+    },
+    {
+      "source": "src/components/cortes-upload.tsx",
+      "target": "@/components/ui/label"
     },
     {
       "source": "src/components/cortes-upload.tsx",
