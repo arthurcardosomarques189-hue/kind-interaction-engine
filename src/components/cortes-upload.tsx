@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Upload, FileVideo, X, Sparkles, Loader2, CheckCircle2, Youtube } from 'lucide-react';
+import { CheckCircle2, File, FileVideo, Loader2, Sparkles, Upload, X, Youtube } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createCortesProject } from '@/lib/cortes-project.functions';

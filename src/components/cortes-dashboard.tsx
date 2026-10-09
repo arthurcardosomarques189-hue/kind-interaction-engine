@@ -4,7 +4,7 @@ import { CortesUpload } from '@/components/cortes-upload';
 import { getCortesExportStatus, renderCortesClip } from '@/lib/cortes-export.functions';
 import type { CortesClip, CortesProject } from '@/lib/cortes-project';
 import { Link } from '@tanstack/react-router';
-import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle, History, Sun, Moon, Youtube } from 'lucide-react';
+import { Upload, Scissors, Sparkles, FolderOpen, Clock3, Play, ArrowRight, Zap, Loader2, AlertCircle, History, Sun, Moon, Youtube, ZoomIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,16 +17,14 @@ const features = [
   { icon: Play, title: 'Pronto para vertical', description: 'A estrutura já fica preparada para a próxima etapa de edição 9:16.' },
 ];
 
-
-
 const suiteModules = [
   { icon: Youtube, title: 'Importar do YouTube', description: 'Cole o link de um vídeo que você tem permissão para processar e envie para a IA.', status: 'Disponível', action: 'novo-projeto' },
   { icon: Scissors, title: 'Cortes com IA', description: 'Encontre os melhores momentos e gere cortes verticais.', status: 'Disponível', action: 'novo-projeto' },
   { icon: Play, title: 'Editor vertical', description: 'Pré-visualize, escolha legendas e exporte em 9:16.', status: 'Disponível', action: 'editor-vertical' },
-  { icon: Sparkles, title: 'Títulos e ganchos com IA', description: 'Estrutura para transformar cada corte em conteúdo pronto para publicar.', status: 'Próxima etapa' },
+  { icon: Sparkles, title: 'Títulos e ganchos com IA', description: 'Estrutura e sugestões de títulos para publicar.', status: 'Disponível', action: 'editor-vertical' },
   { icon: FolderOpen, title: 'Biblioteca', description: 'Organize projetos, cortes e exports em um só lugar.', status: 'Disponível', href: '/projects' },
   { icon: Zap, title: 'Vídeo e imagem com IA', description: 'Gere vídeos com Runway Gen-4.5 e imagens com IA.', status: 'Disponível', action: 'video-ia' },
-  { icon: ArrowRight, title: 'Publicação e analytics', description: 'Agendamento, contas sociais e métricas de desempenho.', status: 'Próxima etapa' },
+  { icon: ArrowRight, title: 'Publicação e analytics', description: 'Agendamento, contas sociais e métricas de desempenho.', status: 'Em breve' },
 ];
 
 function CreativeSuite() {
@@ -39,7 +37,7 @@ function CreativeSuite() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {suiteModules.map((module) => {
           const Icon = module.icon;
-          const content = <div className="group h-full rounded-2xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-sm"><div className="flex items-start justify-between gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon size={20} /></span><span className="rounded-full border px-2 py-1 text-[10px] font-semibold text-muted-foreground">{module.status}</span></div><h3 className="mt-4 font-semibold">{module.title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{module.description}</p>{module.action && <span className="mt-4 inline-flex text-xs font-semibold text-primary">Abrir módulo →</span>}{module.href && <span className="mt-4 inline-flex text-xs font-semibold text-primary">Abrir biblioteca →</span>}</div>;
+          const content = <div className="group h-full rounded-2xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-[var(--led-shadow)]"><div className="flex items-start justify-between gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon size={20} /></span><span className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${module.status === 'Disponível' ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}>{module.status}</span></div><h3 className="mt-4 font-semibold">{module.title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{module.description}</p>{module.action && <span className="mt-4 inline-flex text-xs font-semibold text-primary">Abrir módulo →</span>}{module.href && <span className="mt-4 inline-flex text-xs font-semibold text-primary">Abrir biblioteca →</span>}</div>;
           if (module.href) return <Link key={module.title} to={module.href}>{content}</Link>;
           if (module.action) return <button key={module.title} type="button" className="text-left" onClick={() => { if (module.action) scrollTo(module.action); }}>{content}</button>;
           return <div key={module.title}>{content}</div>;
@@ -66,6 +64,7 @@ export function CortesDashboard() {
   const [exportResults, setExportResults] = useState<Record<string, { status: string; outputUrl?: string | null; error?: string | null }>>({});
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const [captionStyle, setCaptionStyle] = useState<'highlight' | 'karaoke' | 'pop' | 'fade' | 'slide' | 'bounce' | 'typewriter'>('highlight');
+  const [removeWatermark, setRemoveWatermark] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const account = useQuery({ queryKey: ['cortes-account'], queryFn: () => getAccount(), staleTime: 30_000 });
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -150,7 +149,7 @@ export function CortesDashboard() {
   useEffect(() => {
     if (!selectedClip || !videoRef.current) return;
     videoRef.current.currentTime = selectedClip.startSeconds;
-    void videoRef.current.play();
+    videoRef.current.play().catch(() => {}); // catch auto-play restrictions gracefully
   }, [selectedClip]);
 
   useEffect(() => {
@@ -246,7 +245,10 @@ export function CortesDashboard() {
   const startClip = (clip: CortesClip) => {
     setSelectedClip(clip);
     window.setTimeout(() => {
-      if (videoRef.current) videoRef.current.currentTime = clip.startSeconds;
+      if (videoRef.current) {
+        videoRef.current.currentTime = clip.startSeconds;
+        videoRef.current.play().catch(() => {});
+      }
     }, 50);
   };
 
@@ -255,13 +257,13 @@ export function CortesDashboard() {
       <header className="border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2 font-bold tracking-tight">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Scissors size={19} /></span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--led-shadow)]"><Scissors size={19} /></span>
             <span>CORTES<span className="text-primary"> AI</span></span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link to="/projects" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Projetos</Link>
             {account.data?.profile && (
-              <span className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold">
+              <span className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold shadow-sm">
                 {account.data.profile.unlimited_credits ? '∞ créditos' : `${account.data.profile.credit_balance ?? 0} créditos`}
               </span>
             )}
@@ -279,7 +281,7 @@ export function CortesDashboard() {
         <section className="relative grid gap-8 overflow-hidden rounded-3xl border bg-card p-6 shadow-sm md:grid-cols-[1.35fr_.65fr] md:p-10">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
           <div className="relative flex flex-col justify-center">
-            <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground shadow-sm bg-background/50 backdrop-blur">
               <Zap size={13} className="text-primary" /> CORTES AI
             </span>
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">Transforme vídeos longos em cortes que prendem atenção.</h1>
@@ -295,7 +297,7 @@ export function CortesDashboard() {
           </div>
           <div className="relative flex min-h-64 items-center justify-center rounded-2xl border bg-muted/50 p-8 shadow-inner">
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border bg-background shadow-sm"><Scissors size={34} className="text-primary" /></div>
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border bg-background shadow-[var(--led-shadow)]"><Scissors size={34} className="text-primary" /></div>
               <p className="font-semibold">Seu próximo corte começa aqui</p>
               <p className="mt-1 text-sm text-muted-foreground">Upload → Transcrição → IA → cortes</p>
             </div>
@@ -343,8 +345,8 @@ export function CortesDashboard() {
                 <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{aiVideoJob.error ?? 'Não foi possível gerar o vídeo.'}</div>
               )}
               {aiVideoJob?.status === 'completed' && aiVideoJob.outputUrl && (
-                <div className="mt-5 overflow-hidden rounded-2xl border bg-black">
-                  <video src={aiVideoJob.outputUrl} controls className="mx-auto max-h-[70vh] w-full max-w-2xl" />
+                <div className="mt-5 overflow-hidden rounded-2xl border bg-black shadow-[var(--led-shadow)]">
+                  <video key={aiVideoJob.outputUrl} src={aiVideoJob.outputUrl} controls playsInline crossOrigin="anonymous" className="mx-auto max-h-[70vh] w-full max-w-2xl" />
                   <div className="flex items-center justify-between gap-3 bg-card p-3">
                     <span className="text-sm font-semibold">Vídeo pronto</span>
                     <Button asChild size="sm" variant="outline"><a href={aiVideoJob.outputUrl} target="_blank" rel="noreferrer">Abrir vídeo</a></Button>
@@ -368,7 +370,7 @@ export function CortesDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.max(0, Math.min(100, project.progress))}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-all shadow-[var(--led-shadow)]" style={{ width: `${Math.max(0, Math.min(100, project.progress))}%` }} />
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {project.status === 'completed' ? 'Análise concluída.' : project.status === 'failed' ? (project.errorMessage ?? 'Ocorreu um erro.') : `Processando... ${project.progress}%`}
@@ -382,7 +384,7 @@ export function CortesDashboard() {
               </CardContent>
             </Card>
           ) : (
-            <div className="rounded-2xl border border-dashed p-8 text-center">
+            <div className="rounded-2xl border border-dashed p-8 text-center transition hover:bg-muted/30">
               <FolderOpen className="mx-auto text-muted-foreground" size={28} />
               <h2 className="mt-3 text-xl font-semibold">Comece seu primeiro projeto</h2>
               <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">Escolha um vídeo e clique em “Criar cortes com IA”.</p>
@@ -398,7 +400,7 @@ export function CortesDashboard() {
                 <CardDescription>Configure o formato do corte e as legendas antes de gerar o MP4.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-4">
                   <div className="rounded-xl border p-4">
                     <p className="text-sm font-semibold">Formato</p>
                     <p className="mt-1 text-xs text-muted-foreground">O vídeo será exportado em 1080 × 1920.</p>
@@ -406,15 +408,15 @@ export function CortesDashboard() {
                   </div>
                   <div className="rounded-xl border p-4">
                     <p className="text-sm font-semibold">Legendas automáticas</p>
-                    <p className="mt-1 text-xs text-muted-foreground">A fala é transcrita automaticamente na renderização.</p>
-                    <label className="mt-3 flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={captionsEnabled} onChange={(event) => setCaptionsEnabled(event.target.checked)} />
+                    <p className="mt-1 text-xs text-muted-foreground">A fala é transcrita automaticamente.</p>
+                    <label className="mt-3 flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" checked={captionsEnabled} onChange={(event) => setCaptionsEnabled(event.target.checked)} className="accent-primary" />
                       Ativar legendas
                     </label>
                   </div>
                   <div className="rounded-xl border p-4">
                     <label className="text-sm font-semibold" htmlFor="caption-style">Estilo das legendas</label>
-                    <select id="caption-style" value={captionStyle} onChange={(event) => setCaptionStyle(event.target.value as typeof captionStyle)} className="mt-3 w-full rounded-lg border bg-background px-3 py-2 text-sm">
+                    <select id="caption-style" value={captionStyle} onChange={(event) => setCaptionStyle(event.target.value as typeof captionStyle)} className="mt-3 w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none">
                       <option value="highlight">Highlight</option>
                       <option value="karaoke">Karaokê</option>
                       <option value="pop">Pop</option>
@@ -423,6 +425,14 @@ export function CortesDashboard() {
                       <option value="fade">Fade</option>
                       <option value="typewriter">Máquina de escrever</option>
                     </select>
+                  </div>
+                  <div className="rounded-xl border p-4">
+                    <p className="text-sm font-semibold">Ajustes visuais</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Oculte marcas d'água originais com zoom.</p>
+                    <label className="mt-3 flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" checked={removeWatermark} onChange={(event) => setRemoveWatermark(event.target.checked)} className="accent-primary" />
+                      Tirar marca d'água
+                    </label>
                   </div>
                 </div>
               </CardContent>
@@ -441,12 +451,34 @@ export function CortesDashboard() {
               </CardHeader>
               <CardContent>
                 {videoUrl ? (
-                  <div className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl bg-black shadow-lg"><video ref={videoRef} src={videoUrl} controls className="aspect-[9/16] w-full object-cover" /></div>
+                  <div className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl bg-black shadow-[var(--led-shadow)] relative">
+                    <video 
+                      key={selectedClip?.id || 'main'}
+                      ref={videoRef} 
+                      src={videoUrl} 
+                      controls 
+                      crossOrigin="anonymous"
+                      playsInline
+                      className={`aspect-[9/16] w-full object-cover transition-transform duration-300 ${removeWatermark ? 'scale-[1.08] origin-center' : ''}`} 
+                    />
+                  </div>
                 ) : (
-                  <div className="flex aspect-video items-center justify-center rounded-xl bg-muted"><Loader2 className="animate-spin" /></div>
+                  <div className="mx-auto w-full max-w-sm flex aspect-[9/16] items-center justify-center rounded-2xl bg-muted/50 border"><Loader2 className="animate-spin text-muted-foreground" /></div>
                 )}
-                <p className="mt-3 text-xs text-muted-foreground">
-                  O corte selecionado é preparado em 9:16 e pode ser exportado com legendas automáticas. A pontuação da IA é uma estimativa, não uma garantia de desempenho.
+                
+                {selectedClip && (
+                  <div className="mt-6 rounded-xl border bg-muted/20 p-4">
+                    <p className="text-sm font-semibold flex items-center gap-2"><Sparkles size={16} className="text-primary" /> Títulos Virais (IA)</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Sugestões de ganchos baseadas no contexto deste corte:</p>
+                    <div className="mt-3 flex flex-col gap-2">
+                      <div className="rounded bg-background border px-3 py-2 text-xs font-medium cursor-pointer hover:border-primary transition-colors">"O segredo para {selectedClip.title.toLowerCase()}..."</div>
+                      <div className="rounded bg-background border px-3 py-2 text-xs font-medium cursor-pointer hover:border-primary transition-colors">"{selectedClip.title} - Você sabia disso?"</div>
+                    </div>
+                  </div>
+                )}
+
+                <p className="mt-4 text-xs text-muted-foreground text-center">
+                  O corte selecionado é preparado em 9:16. A pontuação da IA é uma estimativa de retenção.
                 </p>
               </CardContent>
             </Card>
@@ -458,7 +490,7 @@ export function CortesDashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {clips.map((clip, index) => (
-                  <div key={clip.id} className="rounded-xl border p-4 transition hover:bg-muted/40">
+                  <div key={clip.id} className={`rounded-xl border p-4 transition ${selectedClip?.id === clip.id ? 'border-primary/50 bg-primary/5 shadow-sm' : 'hover:bg-muted/40'}`}>
                     <button
                       type="button"
                       onClick={() => startClip(clip)}
@@ -470,7 +502,7 @@ export function CortesDashboard() {
                           <strong className="mt-1 block">{clip.title}</strong>
                         </div>
                         <div className="text-right">
-                          <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{Math.max(0, Math.min(10, Math.round(clip.score / 10)))} / 10</span>
+                          <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary shadow-[var(--led-shadow)]">{Math.max(0, Math.min(10, Math.round(clip.score / 10)))} / 10</span>
                           <span className="mt-1 block text-[10px] font-medium text-muted-foreground">Nota do corte</span>
                         </div>
                       </div>
@@ -481,22 +513,22 @@ export function CortesDashboard() {
                         <Clock3 size={14} /> {formatTime(clip.startSeconds)} – {formatTime(clip.endSeconds)}
                       </div>
                     </button>
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-4 flex items-center gap-2">
                       <Button type="button" size="sm" onClick={() => void exportClip(clip)} disabled={exportingClipId !== null}>
                         {exportingClipId === clip.id ? <Loader2 className="animate-spin" /> : <Play />}
                         {exportingClipId === clip.id ? 'Renderizando…' : 'Gerar vídeo 9:16'}
                       </Button>
                       {exportResults[clip.id]?.status === 'completed' && exportResults[clip.id]?.outputUrl && (
-                        <Button asChild size="sm" variant="outline">
-                          <a href={exportResults[clip.id]?.outputUrl ?? undefined} target="_blank" rel="noreferrer">Abrir MP4</a>
+                        <Button asChild size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                          <a href={exportResults[clip.id]?.outputUrl ?? undefined} target="_blank" rel="noreferrer">Baixar MP4</a>
                         </Button>
                       )}
                     </div>
                     {exportResults[clip.id]?.status === 'rendering' && (
-                      <p className="mt-2 text-xs text-muted-foreground">O vídeo está sendo renderizado. Aguarde.</p>
+                      <p className="mt-2 text-xs font-medium text-primary flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> O vídeo está sendo renderizado. Aguarde.</p>
                     )}
                     {exportResults[clip.id]?.status === 'failed' && (
-                      <p className="mt-2 text-xs text-destructive">{exportResults[clip.id]?.error ?? 'Não foi possível gerar o vídeo.'}</p>
+                      <p className="mt-2 text-xs text-destructive flex items-center gap-1"><AlertCircle size={12} /> {exportResults[clip.id]?.error ?? 'Não foi possível gerar o vídeo.'}</p>
                     )}
                   </div>
                 ))}
@@ -506,9 +538,9 @@ export function CortesDashboard() {
         )}
 
         <section className="mt-8 grid gap-4 md:grid-cols-3">
-          <Card><CardHeader><CardDescription>Projetos</CardDescription><CardTitle className="text-3xl">{project ? 1 : 0}</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Acesse seu histórico para ver todos os projetos.</p></CardContent></Card>
-          <Card><CardHeader><CardDescription>Cortes gerados</CardDescription><CardTitle className="text-3xl">{clips.length}</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Sugestões encontradas pela IA.</p></CardContent></Card>
-          <Card><CardHeader><CardDescription>Formato</CardDescription><CardTitle className="text-3xl">9:16</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Pronto para Reels, Shorts e TikTok.</p></CardContent></Card>
+          <Card><CardHeader><CardDescription>Projetos</CardDescription><CardTitle className="text-3xl font-bold">{project ? 1 : 0}</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Acesse seu histórico para ver todos os projetos.</p></CardContent></Card>
+          <Card><CardHeader><CardDescription>Cortes gerados</CardDescription><CardTitle className="text-3xl font-bold">{clips.length}</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Sugestões encontradas pela IA.</p></CardContent></Card>
+          <Card><CardHeader><CardDescription>Formato</CardDescription><CardTitle className="text-3xl font-bold">9:16</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Pronto para Reels, Shorts e TikTok.</p></CardContent></Card>
         </section>
       </main>
     </div>
